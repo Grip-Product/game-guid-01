@@ -26,25 +26,57 @@ const Icon = {
 };
 
 const parsePrice = s => parseInt(String(s||"0").replace(/[^0-9]/g,""))||0;
+
 const PRODUCTS = [
-  { id:1, optionType:"none",   name:"옵션없음 상품", price:"89,000원",  total:47, oldPrice:"220,000원" },
+  { id:1, optionType:"none",   name:"옵션없음 상품",   price:"89,000원",  total:47, oldPrice:"220,000원" },
   { id:2, optionType:"depth1", name:"1뎁스 옵션 상품", price:"129,000원", total:23, oldPrice:"280,000원", options:{ depth1:{ label:"사이즈", items:["S","M","L","XL"] } } },
   { id:3, optionType:"depth2", name:"2뎁스 옵션 상품", price:"69,000원",  total:8,  oldPrice:"150,000원", options:{ depth1:{ label:"색상", items:["블랙","화이트","그레이"] }, depth2:{ label:"사이즈", items:["S","M","L"] } } },
   { id:4, optionType:"depth3", name:"3뎁스 옵션 상품", price:"55,000원",  total:15, oldPrice:"120,000원", options:{ depth1:{ label:"색상", items:["블랙","화이트"] }, depth2:{ label:"사이즈", items:["S","M","L"] }, depth3:{ label:"패턴", items:["체크","스트라이프","무지"] } } },
 ];
 const CHAT_MSGS = [
-  { id:1, user:"나비🦋",    text:"선풍기 얼마에요?",  color:"#fde047" },
-  { id:2, user:"홍길동",    text:"와 이 가격 실화??",  color:"#67e8f9" },
-  { id:3, user:"핑크고양이", text:"바로 담았어요!!🛒",  color:"#f9a8d4" },
-  { id:4, user:"별빛소녀",  text:"무료배송이에요?",    color:"#86efac" },
+  { id:1, user:"나비🦋",    text:"선풍기 얼마에요?", color:"#fde047" },
+  { id:2, user:"홍길동",    text:"와 이 가격 실화??", color:"#67e8f9" },
+  { id:3, user:"핑크고양이", text:"바로 담았어요!!🛒", color:"#f9a8d4" },
+  { id:4, user:"별빛소녀",  text:"무료배송이에요?",   color:"#86efac" },
 ];
 const GAME_PRODUCT = { id:99, optionType:"none", name:"선착게임 특가상품", price:"89,000원", total:5, oldPrice:"220,000원" };
 const OPTION_BADGE = { none:"옵션없음", depth1:"1뎁스", depth2:"2뎁스", depth3:"3뎁스" };
-const MOCK_WINNERS = [
-  { rank:1, name:"시나몬로올" },
-  { rank:2, name:"나비🦋" },
-  { rank:3, name:"핑크고양이" },
-];
+const MOCK_WINNERS = [{ rank:1, name:"시나몬로올" },{ rank:2, name:"나비🦋" },{ rank:3, name:"핑크고양이" }];
+
+function getRaffleTitle(target) {
+  if (target === "방송구매자만") return "구매자추첨";
+  if (target === "팔로워만") return "팔로우 추첨";
+  return "추첨게임";
+}
+
+function RaffleGameCard({ gameConfig, participants, buttonLabel, onButtonClick, participated }) {
+  var title = getRaffleTitle(gameConfig.target);
+  var btnBg = participated ? "rgba(249,115,22,0.45)" : "#f97316";
+  var btnShadow = participated ? "none" : "0 2px 8px rgba(249,115,22,0.45)";
+  return (
+    <div style={{borderRadius:20, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.2)"}}>
+      <div style={{background:"#f5efe6", padding:"12px 16px", display:"flex", alignItems:"center", gap:12}}>
+        <div style={{width:44, height:44, borderRadius:12, background:"#f97316", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0}}>🎟️</div>
+        <div style={{flex:1}}>
+          <div style={{display:"flex", alignItems:"center", gap:7, marginBottom:3}}>
+            <span style={{fontSize:15, fontWeight:900, color:"#0f172a"}}>{title}</span>
+            <span style={{background:"#f97316", color:"white", fontSize:11, fontWeight:900, padding:"2px 9px", borderRadius:9999}}>{gameConfig.people}명</span>
+          </div>
+          <p style={{fontSize:11, color:"#92400e", fontWeight:700}}>{participants.toLocaleString()}명 참여 중</p>
+        </div>
+        <button onClick={onButtonClick} style={{background:btnBg, color:"white", fontWeight:900, fontSize:13, border:"none", borderRadius:9999, padding:"9px 22px", cursor: participated ? "default" : "pointer", boxShadow:btnShadow, flexShrink:0, whiteSpace:"nowrap"}}>
+          {buttonLabel}
+        </button>
+      </div>
+      {gameConfig.price > 0 && (
+        <div style={{background:"white", padding:"10px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", borderTop:"1px solid #f1e8dc"}}>
+          <span style={{fontSize:13, color:"#64748b", fontWeight:600}}>추첨 상품</span>
+          <span style={{fontSize:14, fontWeight:900, color:"#0f172a"}}>{Number(gameConfig.price).toLocaleString()}원</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function GameProductRegisterPopup({ isOpen, onClose, winnerCount, onCartSuccess }) {
   const [qty, setQty] = useState(String(winnerCount||1));
@@ -57,20 +89,15 @@ function GameProductRegisterPopup({ isOpen, onClose, winnerCount, onCartSuccess 
     <div style={{ position:"absolute", inset:0, zIndex:90, display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.5)" }} onClick={onClose}/>
       <div style={{ position:"relative", zIndex:1, background:"white", borderRadius:20, width:"85%", overflow:"hidden", boxShadow:"0 20px 50px rgba(0,0,0,0.35)" }}>
-        <div style={{ background:"#ede9fe", padding:"14px 14px 14px" }}>
+        <div style={{ background:"#ede9fe", padding:"14px" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ position:"relative", flexShrink:0 }}>
-              <div style={{ width:64, height:64, borderRadius:10, background:"#ddd6fe", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
-                <Icon.Image size={28}/>
-              </div>
-              <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(0,0,0,0.55)", borderBottomLeftRadius:10, borderBottomRightRadius:10, textAlign:"center", padding:"3px 0" }}>
-                <span style={{ fontSize:9, color:"white", fontWeight:700 }}>변경</span>
-              </div>
+              <div style={{ width:64, height:64, borderRadius:10, background:"#ddd6fe", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon.Image size={28}/></div>
+              <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(0,0,0,0.55)", borderBottomLeftRadius:10, borderBottomRightRadius:10, textAlign:"center", padding:"3px 0" }}><span style={{ fontSize:9, color:"white", fontWeight:700 }}>변경</span></div>
             </div>
             <div style={{ flex:1, display:"flex", flexDirection:"column", gap:2 }}>
               {nameEditing ? (
-                <input autoFocus value={productName} onChange={e=>setProductName(e.target.value)} onBlur={()=>setNameEditing(false)} onKeyDown={e=>e.key==="Enter"&&setNameEditing(false)}
-                  style={{ fontSize:14, fontWeight:700, color:"#0f172a", background:"white", border:"1.5px solid #6366f1", borderRadius:8, padding:"6px 10px", outline:"none", fontFamily:"inherit", width:"100%" }}/>
+                <input autoFocus value={productName} onChange={e=>setProductName(e.target.value)} onBlur={()=>setNameEditing(false)} onKeyDown={e=>e.key==="Enter"&&setNameEditing(false)} style={{ fontSize:14, fontWeight:700, color:"#0f172a", background:"white", border:"1.5px solid #6366f1", borderRadius:8, padding:"6px 10px", outline:"none", fontFamily:"inherit", width:"100%" }}/>
               ) : (
                 <div onClick={()=>setNameEditing(true)} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer" }}>
                   <span style={{ fontSize:14, fontWeight:700, color:"#0f172a" }}>{productName || "상품명 입력"}</span>
@@ -86,23 +113,18 @@ function GameProductRegisterPopup({ isOpen, onClose, winnerCount, onCartSuccess 
         </div>
         <div style={{ borderBottom:"1px solid #f1f5f9", padding:"20px 20px 16px", textAlign:"center" }}>
           <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center", gap:6 }}>
-            <input type="number" inputMode="numeric" value={qty} onChange={e=>setQty(e.target.value.replace(/[^0-9]/g,""))}
-              style={{ fontSize:40, fontWeight:700, color:"#6366f1", border:"none", outline:"none", width:80, textAlign:"center", background:"transparent", fontFamily:"inherit" }}/>
+            <input type="number" inputMode="numeric" value={qty} onChange={e=>setQty(e.target.value.replace(/[^0-9]/g,""))} style={{ fontSize:40, fontWeight:700, color:"#6366f1", border:"none", outline:"none", width:80, textAlign:"center", background:"transparent", fontFamily:"inherit" }}/>
             <span style={{ fontSize:18, color:"#0f172a", fontWeight:700 }}>개</span>
           </div>
         </div>
         <div style={{ borderBottom:"1px solid #f1f5f9", padding:"16px 20px", textAlign:"center" }}>
           <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center", gap:6 }}>
-            <input type="number" inputMode="numeric" value={price} onChange={e=>setPrice(e.target.value.replace(/[^0-9]/g,""))}
-              style={{ fontSize:40, fontWeight:700, color:"#6366f1", border:"none", outline:"none", width:130, textAlign:"center", background:"transparent", fontFamily:"inherit" }}/>
+            <input type="number" inputMode="numeric" value={price} onChange={e=>setPrice(e.target.value.replace(/[^0-9]/g,""))} style={{ fontSize:40, fontWeight:700, color:"#6366f1", border:"none", outline:"none", width:130, textAlign:"center", background:"transparent", fontFamily:"inherit" }}/>
             <span style={{ fontSize:18, color:"#0f172a", fontWeight:700 }}>원</span>
           </div>
         </div>
         <div style={{ padding:"18px 20px 8px" }}>
-          <button onClick={()=>{ onCartSuccess({ name: productName, price: `${Number(price).toLocaleString()}원` }); onClose(); }}
-            style={{ width:"100%", height:52, background:"#6366f1", borderRadius:9999, color:"white", fontWeight:900, fontSize:15, border:"none", cursor:"pointer", boxShadow:"0 4px 16px rgba(99,102,241,0.35)" }}>
-            {winnerCount}명 장바구니 담기
-          </button>
+          <button onClick={()=>{ onCartSuccess({ name: productName, price: Number(price).toLocaleString()+"원" }); onClose(); }} style={{ width:"100%", height:52, background:"#6366f1", borderRadius:9999, color:"white", fontWeight:900, fontSize:15, border:"none", cursor:"pointer" }}>{winnerCount}명 장바구니 담기</button>
         </div>
         <div style={{ textAlign:"center", padding:"8px 0 18px" }}>
           <button onClick={onClose} style={{ background:"none", border:"none", fontSize:14, color:"#94a3b8", cursor:"pointer", fontWeight:600 }}>취소</button>
@@ -124,9 +146,7 @@ function CartSuccessPopup({ isOpen, onClose, product, onGoToCart }) {
         </div>
         <div style={{ padding:"16px 20px 20px" }}>
           <div style={{ borderRadius:14, border:"1px solid #e2e8f0", overflow:"hidden", display:"flex", alignItems:"center", position:"relative" }}>
-            <div style={{ position:"absolute", top:10, left:10, background:"#6366f1", color:"white", fontSize:10, fontWeight:900, padding:"3px 10px", borderRadius:9999, display:"flex", alignItems:"center", gap:4, zIndex:1 }}>
-              <Icon.Zap size={11} fill="white"/> 플래시 상품
-            </div>
+            <div style={{ position:"absolute", top:10, left:10, background:"#6366f1", color:"white", fontSize:10, fontWeight:900, padding:"3px 10px", borderRadius:9999, display:"flex", alignItems:"center", gap:4, zIndex:1 }}><Icon.Zap size={11} fill="white"/> 플래시 상품</div>
             <div style={{ width:100, height:90, background:"#e2e8f0", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}><Icon.Image size={32}/></div>
             <div style={{ padding:"16px 14px" }}>
               <p style={{ fontSize:14, fontWeight:700, color:"#0f172a", marginBottom:6 }}>{product.name}</p>
@@ -168,24 +188,22 @@ function SellerGameResultPopup({ isOpen, onClose, winners, onReset, onCartSucces
         </div>
         <div style={{ padding:"14px 20px 10px", borderTop:"1px solid #f1f5f9", flexShrink:0, display:"flex", gap:10 }}>
           <button style={{ flex:1, height:52, background:"#f1f5f9", borderRadius:14, fontWeight:700, fontSize:14, color:"#374151", border:"none", cursor:"pointer" }}>결과 캡처</button>
-          <button onClick={()=>setShowRegister(true)}
-            style={{ flex:2, height:52, background:"#f43f5e", borderRadius:14, fontWeight:900, fontSize:14, color:"white", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+          <button onClick={()=>setShowRegister(true)} style={{ flex:2, height:52, background:"#f43f5e", borderRadius:14, fontWeight:900, fontSize:14, color:"white", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
             <Icon.Zap size={15} fill="white"/> 게임 상품 등록
           </button>
         </div>
         <div style={{ textAlign:"center", padding:"4px 0 22px" }}>
           <button onClick={()=>{ onClose(); onReset(); }} style={{ background:"none", border:"none", fontSize:13, color:"#94a3b8", cursor:"pointer", textDecoration:"underline", fontWeight:600 }}>게임 종료하고 닫기</button>
         </div>
-        {showRegister && (
-          <GameProductRegisterPopup isOpen={showRegister} onClose={()=>{ setShowRegister(false); onClose(); onReset(); }} winnerCount={winners.length} onCartSuccess={onCartSuccess}/>
-        )}
+        {showRegister && <GameProductRegisterPopup isOpen={showRegister} onClose={()=>{ setShowRegister(false); onClose(); onReset(); }} winnerCount={winners.length} onCartSuccess={onCartSuccess}/>}
       </div>
     </div>
   );
 }
 
-function WinnerResultPopup({ isOpen, onClose, rank=1, nickname="시나몬로올" }) {
-  const sparkPos = [
+function WinnerResultPopup({ isOpen, onClose, rank, nickname }) {
+  rank = rank || 1; nickname = nickname || "시나몬로올";
+  var sparkPos = [
     { top:"18%", left:"72%", size:28, delay:0 },
     { top:"32%", left:"10%", size:22, delay:0.15 },
     { top:"55%", left:"80%", size:16, delay:0.3 },
@@ -197,20 +215,18 @@ function WinnerResultPopup({ isOpen, onClose, rank=1, nickname="시나몬로올"
     <div style={{ position:"absolute", inset:0, zIndex:80, display:"flex", flexDirection:"column" }}>
       <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.72)", backdropFilter:"blur(3px)" }}/>
       <div style={{ position:"relative", zIndex:1, flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"0 20px" }}>
-        {sparkPos.map((s,i) => (
-          <div key={i} style={{ position:"absolute", top:s.top, left:s.left, animation:`sparkSpin 1.4s linear infinite`, animationDelay:`${s.delay}s` }}>
-            <svg width={s.size} height={s.size} viewBox="0 0 24 24" fill="none">
-              <line x1="12" y1="2" x2="12" y2="6" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="12" y1="18" x2="12" y2="22" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="2" y1="12" x2="6" y2="12" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="18" y1="12" x2="22" y2="12" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="19.07" y1="4.93" x2="16.24" y2="7.76" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="7.76" y1="16.24" x2="4.93" y2="19.07" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
-        ))}
+        {sparkPos.map(function(s,i) {
+          return (
+            <div key={i} style={{ position:"absolute", top:s.top, left:s.left, animation:"sparkSpin 1.4s linear infinite", animationDelay:s.delay+"s" }}>
+              <svg width={s.size} height={s.size} viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="2" x2="12" y2="6" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="12" y1="18" x2="12" y2="22" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="2" y1="12" x2="6" y2="12" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="18" y1="12" x2="22" y2="12" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+          );
+        })}
         <div style={{ position:"relative", marginBottom:8, animation:"handBounce 1s ease-out" }}>
           <div style={{ fontSize:100, lineHeight:1, filter:"drop-shadow(0 8px 24px rgba(244,63,94,0.5))" }}>🤚</div>
           <div style={{ position:"absolute", bottom:8, right:-4, background:"linear-gradient(135deg,#f43f5e,#e11d48)", color:"white", fontSize:13, fontWeight:900, width:36, height:36, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 12px rgba(244,63,94,0.6)", border:"2px solid white" }}>{rank}등</div>
@@ -220,19 +236,13 @@ function WinnerResultPopup({ isOpen, onClose, rank=1, nickname="시나몬로올"
           <span style={{ color:"white", fontSize:17, fontWeight:700 }}>{nickname}</span>
         </div>
         <div style={{ background:"rgba(15,23,42,0.9)", border:"1px solid rgba(244,63,94,0.3)", borderRadius:12, padding:"13px 28px", marginBottom:36, position:"relative" }}>
-          <div style={{ position:"absolute", top:-8, left:"50%", transform:"translateX(-50%)", display:"flex", gap:4 }}>
-            {[...Array(6)].map((_,i)=><div key={i} style={{ width:4, height:4, borderRadius:"50%", background:"#f43f5e", opacity:0.6 }}/>)}
-          </div>
-          <div style={{ position:"absolute", bottom:-8, left:"50%", transform:"translateX(-50%)", display:"flex", gap:4 }}>
-            {[...Array(6)].map((_,i)=><div key={i} style={{ width:4, height:4, borderRadius:"50%", background:"#f43f5e", opacity:0.6 }}/>)}
-          </div>
           <p style={{ fontSize:16, fontWeight:700, color:"white", textAlign:"center", whiteSpace:"nowrap" }}>
             <span style={{ color:"#f43f5e", fontWeight:900 }}>{nickname}</span>님은 <span style={{ fontWeight:900 }}>{rank}등</span>입니다.
           </p>
         </div>
         <div style={{ display:"flex", gap:12, width:"100%" }}>
           <button style={{ flex:1, height:52, borderRadius:9999, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", color:"white", fontSize:15, fontWeight:700, cursor:"pointer" }}>결과 캡처</button>
-          <button onClick={onClose} style={{ flex:1, height:52, borderRadius:9999, background:"linear-gradient(135deg,#f43f5e,#e11d48)", border:"none", color:"white", fontSize:15, fontWeight:900, cursor:"pointer", boxShadow:"0 6px 20px rgba(244,63,94,0.5)" }}>확인</button>
+          <button onClick={onClose} style={{ flex:1, height:52, borderRadius:9999, background:"linear-gradient(135deg,#f43f5e,#e11d48)", border:"none", color:"white", fontSize:15, fontWeight:900, cursor:"pointer" }}>확인</button>
         </div>
       </div>
       <style>{`@keyframes sparkSpin{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg) scale(1)}} @keyframes handBounce{0%{transform:scale(0.5) translateY(30px);opacity:0}60%{transform:scale(1.1) translateY(-8px);opacity:1}100%{transform:scale(1) translateY(0)}}`}</style>
@@ -240,7 +250,8 @@ function WinnerResultPopup({ isOpen, onClose, rank=1, nickname="시나몬로올"
   );
 }
 
-function ProductImage({ size=64, radius=12 }) {
+function ProductImage({ size, radius }) {
+  size = size || 64; radius = radius || 12;
   return (
     <div style={{ width:size, height:size, borderRadius:radius, background:"#dbeafe", flexShrink:0, position:"relative", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <svg viewBox="0 0 100 100" style={{ width:"66%", height:"66%", fill:"#6366f1" }}>
@@ -255,23 +266,26 @@ function ProductImage({ size=64, radius=12 }) {
   );
 }
 
-function Dropdown({ label, items, value, onChange, disabled=false }) {
+function Dropdown({ label, items, value, onChange, disabled }) {
+  disabled = disabled || false;
   const [open, setOpen] = useState(false);
   return (
     <div style={{ position:"relative" }}>
-      <button onClick={() => !disabled && setOpen(o=>!o)} disabled={disabled}
+      <button onClick={() => !disabled && setOpen(function(o){return !o;})} disabled={disabled}
         style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 16px", border:"1px solid #e2e8f0", borderRadius:10, background:disabled?"#f8fafc":"white", cursor:disabled?"not-allowed":"pointer", fontSize:13, color:value?"#0f172a":"#94a3b8", fontWeight:value?700:500 }}>
         <span>{value || label}</span>
         {open ? <Icon.ChevronUp size={16}/> : <Icon.ChevronDown size={16}/>}
       </button>
       {open && (
         <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, background:"white", border:"1px solid #e2e8f0", borderRadius:10, zIndex:10, overflow:"hidden", boxShadow:"0 4px 16px rgba(0,0,0,0.1)" }}>
-          {items.map(item => (
-            <div key={item} onClick={() => { onChange(item); setOpen(false); }}
-              style={{ padding:"13px 16px", fontSize:13, fontWeight:600, color:"#0f172a", cursor:"pointer", borderBottom:"1px solid #f8fafc", background:value===item?"#fff1f2":"white" }}>
-              {item}
-            </div>
-          ))}
+          {items.map(function(item) {
+            return (
+              <div key={item} onClick={() => { onChange(item); setOpen(false); }}
+                style={{ padding:"13px 16px", fontSize:13, fontWeight:600, color:"#0f172a", cursor:"pointer", borderBottom:"1px solid #f8fafc", background:value===item?"#fff1f2":"white" }}>
+                {item}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -299,15 +313,15 @@ function OptionPopup({ isOpen, onClose, product, onAddToCart }) {
   const [qty,setQty]=useState(1); const [selRows,setSelRows]=useState([]);
   useEffect(()=>{ if(isOpen){setD1("");setD2("");setD3("");setQty(1);setSelRows([]);} },[isOpen]);
   if(!isOpen||!product) return null;
-  const {optionType,options}=product;
-  const basePrice=parsePrice(product.price);
-  const handleD1Change=(val)=>{setD1(val);setD2("");setD3("");if(optionType==="depth1"){if(!selRows.find(r=>r.label===val))setSelRows(p=>[...p,{label:val,qty:1}]);setD1("");}};
-  const handleD2Change=(val)=>{setD2(val);setD3("");if(optionType==="depth2"){const lb=`${d1}, ${val}`;if(!selRows.find(r=>r.label===lb))setSelRows(p=>[...p,{label:lb,qty:1}]);setD1("");setD2("");}};
-  const handleD3Change=(val)=>{setD3(val);if(optionType==="depth3"){const lb=`${d1}, ${d2}, ${val}`;if(!selRows.find(r=>r.label===lb))setSelRows(p=>[...p,{label:lb,qty:1}]);setD1("");setD2("");setD3("");}};
-  const changeRowQty=(i,d)=>setSelRows(p=>p.map((r,idx)=>idx===i?{...r,qty:Math.max(1,r.qty+d)}:r));
-  const removeRow=i=>setSelRows(p=>p.filter((_,idx)=>idx!==i));
-  const totalPrice=optionType==="none"?basePrice*qty:selRows.reduce((s,r)=>s+basePrice*r.qty,0);
-  const canBuy=optionType==="none"?true:selRows.length>0;
+  var optionType=product.optionType; var options=product.options;
+  var basePrice=parsePrice(product.price);
+  var handleD1Change=function(val){setD1(val);setD2("");setD3("");if(optionType==="depth1"){if(!selRows.find(function(r){return r.label===val;}))setSelRows(function(p){return [...p,{label:val,qty:1}];});setD1("");}};
+  var handleD2Change=function(val){setD2(val);setD3("");if(optionType==="depth2"){var lb=d1+", "+val;if(!selRows.find(function(r){return r.label===lb;}))setSelRows(function(p){return [...p,{label:lb,qty:1}];});setD1("");setD2("");}};
+  var handleD3Change=function(val){setD3(val);if(optionType==="depth3"){var lb=d1+", "+d2+", "+val;if(!selRows.find(function(r){return r.label===lb;}))setSelRows(function(p){return [...p,{label:lb,qty:1}];});setD1("");setD2("");setD3("");}};
+  var changeRowQty=function(i,d){setSelRows(function(p){return p.map(function(r,idx){return idx===i?{...r,qty:Math.max(1,r.qty+d)}:r;});});};
+  var removeRow=function(i){setSelRows(function(p){return p.filter(function(_,idx){return idx!==i;});});};
+  var totalPrice=optionType==="none"?basePrice*qty:selRows.reduce(function(s,r){return s+basePrice*r.qty;},0);
+  var canBuy=optionType==="none"?true:selRows.length>0;
   return (
     <div style={{position:"absolute",inset:0,zIndex:50,display:"flex",alignItems:"flex-end"}}>
       <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}} onClick={onClose}/>
@@ -325,17 +339,17 @@ function OptionPopup({ isOpen, onClose, product, onAddToCart }) {
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"0 16px"}}>
           {optionType==="none"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0"}}><span style={{fontSize:13,fontWeight:900,color:"#1e293b"}}>수량</span><div style={{display:"flex",alignItems:"center",border:"1px solid #e2e8f0",borderRadius:10,overflow:"hidden"}}><button onClick={()=>setQty(Math.max(1,qty-1))} style={{padding:"7px 11px",background:"none",border:"none",cursor:"pointer",borderRight:"1px solid #f1f5f9",color:"#94a3b8"}}><Icon.Minus/></button><span style={{padding:"0 16px",fontSize:13,fontWeight:900,color:"#0f172a",minWidth:36,textAlign:"center"}}>{qty}</span><button onClick={()=>setQty(qty+1)} style={{padding:"7px 11px",background:"none",border:"none",cursor:"pointer",color:"#94a3b8"}}><Icon.Plus/></button></div></div>}
-          {optionType==="depth1"&&<div style={{padding:"12px 0 4px"}}><Dropdown label={`${options.depth1.label} 선택`} items={options.depth1.items} value={d1} onChange={handleD1Change}/>{selRows.map((r,i)=><SelectedOptionRow key={i} label={r.label} qty={r.qty} onQtyChange={d=>changeRowQty(i,d)} onRemove={()=>removeRow(i)}/>)}</div>}
-          {optionType==="depth2"&&<div style={{padding:"12px 0 4px",display:"flex",flexDirection:"column",gap:8}}><Dropdown label={`${options.depth1.label} 선택`} items={options.depth1.items} value={d1} onChange={handleD1Change}/><Dropdown label={`${options.depth2.label} 선택`} items={options.depth2.items} value={d2} onChange={handleD2Change} disabled={!d1}/>{selRows.map((r,i)=><SelectedOptionRow key={i} label={r.label} qty={r.qty} onQtyChange={d=>changeRowQty(i,d)} onRemove={()=>removeRow(i)}/>)}</div>}
-          {optionType==="depth3"&&<div style={{padding:"12px 0 4px",display:"flex",flexDirection:"column",gap:8}}><Dropdown label={`${options.depth1.label} 선택`} items={options.depth1.items} value={d1} onChange={handleD1Change}/><Dropdown label={`${options.depth2.label} 선택`} items={options.depth2.items} value={d2} onChange={handleD2Change} disabled={!d1}/><Dropdown label={`${options.depth3.label} 선택`} items={options.depth3.items} value={d3} onChange={handleD3Change} disabled={!d2}/>{selRows.map((r,i)=><SelectedOptionRow key={i} label={r.label} qty={r.qty} onQtyChange={d=>changeRowQty(i,d)} onRemove={()=>removeRow(i)}/>)}</div>}
+          {optionType==="depth1"&&<div style={{padding:"12px 0 4px"}}><Dropdown label={options.depth1.label+" 선택"} items={options.depth1.items} value={d1} onChange={handleD1Change}/>{selRows.map(function(r,i){return <SelectedOptionRow key={i} label={r.label} qty={r.qty} onQtyChange={function(d){changeRowQty(i,d);}} onRemove={function(){removeRow(i);}}/>; })}</div>}
+          {optionType==="depth2"&&<div style={{padding:"12px 0 4px",display:"flex",flexDirection:"column",gap:8}}><Dropdown label={options.depth1.label+" 선택"} items={options.depth1.items} value={d1} onChange={handleD1Change}/><Dropdown label={options.depth2.label+" 선택"} items={options.depth2.items} value={d2} onChange={handleD2Change} disabled={!d1}/>{selRows.map(function(r,i){return <SelectedOptionRow key={i} label={r.label} qty={r.qty} onQtyChange={function(d){changeRowQty(i,d);}} onRemove={function(){removeRow(i);}}/>; })}</div>}
+          {optionType==="depth3"&&<div style={{padding:"12px 0 4px",display:"flex",flexDirection:"column",gap:8}}><Dropdown label={options.depth1.label+" 선택"} items={options.depth1.items} value={d1} onChange={handleD1Change}/><Dropdown label={options.depth2.label+" 선택"} items={options.depth2.items} value={d2} onChange={handleD2Change} disabled={!d1}/><Dropdown label={options.depth3.label+" 선택"} items={options.depth3.items} value={d3} onChange={handleD3Change} disabled={!d2}/>{selRows.map(function(r,i){return <SelectedOptionRow key={i} label={r.label} qty={r.qty} onQtyChange={function(d){changeRowQty(i,d);}} onRemove={function(){removeRow(i);}}/>; })}</div>}
           <div style={{marginTop:16,paddingTop:14,borderTop:"1px solid #f1f5f9",marginBottom:8}}>
             <p style={{fontSize:9,color:"#94a3b8",fontWeight:700,textAlign:"right"}}>무료배송 | 2일 이내 배송출발 예정</p>
             <div style={{display:"flex",justifyContent:"flex-end",alignItems:"baseline",gap:6,marginTop:6}}><span style={{fontSize:11,fontWeight:700,color:"#64748b"}}>상품 총 금액</span><span style={{fontSize:20,fontWeight:900,color:"#0f172a"}}>{totalPrice.toLocaleString()}원</span></div>
           </div>
         </div>
         <div style={{padding:"12px 16px 28px",borderTop:"1px solid #f1f5f9",display:"flex",gap:8,flexShrink:0}}>
-          <button onClick={()=>canBuy&&onAddToCart(product,optionType==="none"?qty:selRows.reduce((s,r)=>s+r.qty,0))} disabled={!canBuy} style={{flex:1,padding:"13px 0",background:canBuy?"#0f172a":"#e2e8f0",color:canBuy?"white":"#94a3b8",fontWeight:900,borderRadius:14,fontSize:13,border:"none",cursor:canBuy?"pointer":"not-allowed"}}>장바구니</button>
-          <button onClick={()=>canBuy&&onAddToCart(product,optionType==="none"?qty:selRows.reduce((s,r)=>s+r.qty,0))} disabled={!canBuy} style={{flex:1,padding:"13px 0",background:canBuy?"#f43f5e":"#e2e8f0",color:canBuy?"white":"#94a3b8",fontWeight:900,borderRadius:14,fontSize:13,border:"none",cursor:canBuy?"pointer":"not-allowed"}}>바로구매</button>
+          <button onClick={()=>canBuy&&onAddToCart(product,optionType==="none"?qty:selRows.reduce(function(s,r){return s+r.qty;},0))} disabled={!canBuy} style={{flex:1,padding:"13px 0",background:canBuy?"#0f172a":"#e2e8f0",color:canBuy?"white":"#94a3b8",fontWeight:900,borderRadius:14,fontSize:13,border:"none",cursor:canBuy?"pointer":"not-allowed"}}>장바구니</button>
+          <button onClick={()=>canBuy&&onAddToCart(product,optionType==="none"?qty:selRows.reduce(function(s,r){return s+r.qty;},0))} disabled={!canBuy} style={{flex:1,padding:"13px 0",background:canBuy?"#f43f5e":"#e2e8f0",color:canBuy?"white":"#94a3b8",fontWeight:900,borderRadius:14,fontSize:13,border:"none",cursor:canBuy?"pointer":"not-allowed"}}>바로구매</button>
         </div>
       </div>
     </div>
@@ -344,7 +358,7 @@ function OptionPopup({ isOpen, onClose, product, onAddToCart }) {
 
 function ProductSelectPopup({ isOpen, onClose, products, selectedIds, onToggle }) {
   if (!isOpen) return null;
-  const c={none:"#64748b",depth1:"#6366f1",depth2:"#0ea5e9",depth3:"#f43f5e"};
+  var c={none:"#64748b",depth1:"#6366f1",depth2:"#0ea5e9",depth3:"#f43f5e"};
   return (
     <div style={{position:"absolute",inset:0,zIndex:50,display:"flex",alignItems:"flex-end"}}>
       <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)"}} onClick={onClose}/>
@@ -352,8 +366,8 @@ function ProductSelectPopup({ isOpen, onClose, products, selectedIds, onToggle }
         <div style={{width:36,height:4,background:"#e2e8f0",borderRadius:9999,margin:"10px auto",flexShrink:0}}/>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 14px",flexShrink:0}}><h3 style={{fontSize:15,fontWeight:900,color:"#0f172a"}}>판매 상품 선택</h3><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:"#1e293b"}}><Icon.X/></button></div>
         <div style={{flex:1,overflowY:"auto",padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:12}}>
-          {products.map(p=>{const sel=selectedIds.includes(p.id);return(
-            <div key={p.id} onClick={()=>onToggle(p.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:18,border:`2px solid ${sel?"#f43f5e":"#f1f5f9"}`,background:sel?"#fff1f2":"white",cursor:"pointer"}}>
+          {products.map(function(p){var sel=selectedIds.includes(p.id);return(
+            <div key={p.id} onClick={()=>onToggle(p.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:18,border:"2px solid "+(sel?"#f43f5e":"#f1f5f9"),background:sel?"#fff1f2":"white",cursor:"pointer"}}>
               <ProductImage size={52} radius={10}/>
               <div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}><span style={{background:c[p.optionType],color:"white",fontSize:9,padding:"1px 6px",borderRadius:4,fontWeight:900}}>{OPTION_BADGE[p.optionType]}</span></div><p style={{fontSize:12,fontWeight:700,color:"#0f172a"}}>{p.name}</p><p style={{fontSize:13,fontWeight:900,color:sel?"#f43f5e":"#0f172a",marginTop:2}}>{p.price}</p></div>
               <div style={{width:22,height:22,borderRadius:9999,background:sel?"#f43f5e":"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<Icon.Check color="white"/>}</div>
@@ -366,26 +380,27 @@ function ProductSelectPopup({ isOpen, onClose, products, selectedIds, onToggle }
   );
 }
 
-function ProductListPopup({ isOpen, onClose, initialTab="products", products, cartItems, cartQty, onProductSelect, onQtyChange, onCartRemove }) {
+function ProductListPopup({ isOpen, onClose, initialTab, products, cartItems, cartQty, onProductSelect, onQtyChange, onCartRemove }) {
+  initialTab = initialTab || "products";
   const [tab,setTab]=useState(initialTab);
   useEffect(()=>{if(isOpen)setTab(initialTab);},[isOpen,initialTab]);
   if(!isOpen) return null;
-  const c={none:"#64748b",depth1:"#6366f1",depth2:"#0ea5e9",depth3:"#f43f5e"};
-  const orderTotal=cartItems.reduce((s,i)=>s+parsePrice(i.price)*(cartQty[i.id]||1),0);
-  const discount=cartItems.length>0?30000:0;
-  const payTotal=Math.max(0,orderTotal-discount);
+  var c={none:"#64748b",depth1:"#6366f1",depth2:"#0ea5e9",depth3:"#f43f5e"};
+  var orderTotal=cartItems.reduce(function(s,i){return s+parsePrice(i.price)*(cartQty[i.id]||1);},0);
+  var discount=cartItems.length>0?30000:0;
+  var payTotal=Math.max(0,orderTotal-discount);
   return (
     <div style={{position:"absolute",inset:0,zIndex:30,display:"flex",alignItems:"flex-end"}}>
       <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)"}} onClick={onClose}/>
       <div style={{width:"100%",background:"white",borderTopLeftRadius:24,borderTopRightRadius:24,position:"relative",zIndex:1,display:"flex",flexDirection:"column",height:"82%",overflow:"hidden"}}>
         <div style={{width:36,height:4,background:"#e2e8f0",borderRadius:9999,margin:"10px auto",flexShrink:0}}/>
         <div style={{display:"flex",borderBottom:"1px solid #f1f5f9",position:"relative",flexShrink:0}}>
-          {[["products",`판매상품 ${products.length}`],["cart",`장바구니 ${cartItems.length}`]].map(([key,label])=>(<button key={key} onClick={()=>setTab(key)} style={{flex:1,padding:"12px 0",fontSize:12,fontWeight:900,color:tab===key?"#f43f5e":"#94a3b8",background:"none",border:"none",cursor:"pointer",borderBottom:tab===key?"2px solid #f43f5e":"none"}}>{label}</button>))}
+          {[["products","판매상품 "+products.length],["cart","장바구니 "+cartItems.length]].map(function(arr){var key=arr[0];var label=arr[1];return(<button key={key} onClick={()=>setTab(key)} style={{flex:1,padding:"12px 0",fontSize:12,fontWeight:900,color:tab===key?"#f43f5e":"#94a3b8",background:"none",border:"none",cursor:"pointer",borderBottom:tab===key?"2px solid #f43f5e":"none"}}>{label}</button>);})}
           <button onClick={onClose} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#1e293b"}}><Icon.X/></button>
         </div>
         <div style={{flex:1,overflowY:"auto"}}>
-          {tab==="products"&&<div style={{padding:14,display:"flex",flexDirection:"column",gap:14}}>{products.map(p=>(<div key={p.id} onClick={()=>onProductSelect(p)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 6px",borderRadius:14,cursor:"pointer"}}><ProductImage size={64} radius={10}/><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><span style={{background:c[p.optionType],color:"white",fontSize:9,padding:"1px 6px",borderRadius:4,fontWeight:900}}>{OPTION_BADGE[p.optionType]}</span></div><h4 style={{fontSize:12,fontWeight:700,color:"#0f172a",lineHeight:1.4,marginBottom:4}}>{p.name}</h4><p style={{color:"#f43f5e",fontWeight:900,fontSize:13}}>{p.price}</p></div><button onClick={e=>{e.stopPropagation();onProductSelect(p);}} style={{flexShrink:0,border:"1px solid #fecdd3",color:"#f43f5e",fontSize:10,fontWeight:900,padding:"6px 12px",borderRadius:9999,background:"none",cursor:"pointer"}}>구매</button></div>))}</div>}
-          {tab==="cart"&&<div style={{background:"#f8fafc",minHeight:"100%",display:"flex",flexDirection:"column"}}>{cartItems.length===0?(<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,padding:"60px 0"}}><p style={{color:"#94a3b8",fontSize:13,fontWeight:700}}>장바구니에 상품이 없습니다.</p></div>):(<div style={{padding:14,display:"flex",flexDirection:"column",gap:14,paddingBottom:140}}>{cartItems.map(item=>(<div key={item.id} style={{background:"white",borderRadius:18,padding:14,boxShadow:"0 1px 4px rgba(0,0,0,0.05)",border:"1px solid #f1f5f9"}}><div style={{display:"flex",gap:10,marginBottom:10}}><ProductImage size={56} radius={10}/><div style={{flex:1,minWidth:0}}><h4 style={{fontSize:11,fontWeight:700,color:"#0f172a"}}>{item.name}</h4><p style={{fontSize:13,fontWeight:900,color:"#0f172a",marginTop:3}}>{item.price}</p></div></div><div style={{display:"flex",alignItems:"center",gap:7}}><div style={{display:"flex",alignItems:"center",border:"1px solid #e2e8f0",borderRadius:9,overflow:"hidden",width:76,flexShrink:0}}><button onClick={()=>onQtyChange(item.id,-1)} style={{padding:"5px 7px",background:"none",border:"none",cursor:"pointer",color:"#94a3b8"}}><Icon.Minus/></button><span style={{flex:1,fontSize:11,fontWeight:900,color:"#0f172a",textAlign:"center"}}>{cartQty[item.id]||1}</span><button onClick={()=>onQtyChange(item.id,1)} style={{padding:"5px 7px",background:"none",border:"none",cursor:"pointer",color:"#94a3b8"}}><Icon.Plus/></button></div><div style={{flex:1,display:"flex",gap:6,height:32}}><button onClick={()=>onCartRemove(item.id)} style={{width:48,fontSize:11,fontWeight:700,color:"#64748b",background:"#f8fafc",border:"1px solid #f1f5f9",borderRadius:10,cursor:"pointer"}}>삭제</button><button style={{flex:1,fontSize:11,fontWeight:900,color:"white",background:"#f43f5e",border:"none",borderRadius:10,cursor:"pointer"}}>바로구매</button></div></div></div>))}<div style={{background:"white",borderRadius:18,padding:18,display:"flex",flexDirection:"column",gap:10}}>{[["총 주문금액",`${orderTotal.toLocaleString()}원`],["쿠폰 할인",`-${discount.toLocaleString()}원`],["배송비","0원"]].map(([k,v])=>(<div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#64748b"}}><span>{k}</span><span style={{fontWeight:900,color:"#1e293b"}}>{v}</span></div>))}<div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:"1px solid #f8fafc"}}><span style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>총 결제 금액</span><span style={{fontSize:16,fontWeight:900,color:"#f43f5e"}}>{payTotal.toLocaleString()}원</span></div></div></div>)}</div>}
+          {tab==="products"&&<div style={{padding:14,display:"flex",flexDirection:"column",gap:14}}>{products.map(function(p){return(<div key={p.id} onClick={()=>onProductSelect(p)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 6px",borderRadius:14,cursor:"pointer"}}><ProductImage size={64} radius={10}/><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><span style={{background:c[p.optionType],color:"white",fontSize:9,padding:"1px 6px",borderRadius:4,fontWeight:900}}>{OPTION_BADGE[p.optionType]}</span></div><h4 style={{fontSize:12,fontWeight:700,color:"#0f172a",lineHeight:1.4,marginBottom:4}}>{p.name}</h4><p style={{color:"#f43f5e",fontWeight:900,fontSize:13}}>{p.price}</p></div><button onClick={function(e){e.stopPropagation();onProductSelect(p);}} style={{flexShrink:0,border:"1px solid #fecdd3",color:"#f43f5e",fontSize:10,fontWeight:900,padding:"6px 12px",borderRadius:9999,background:"none",cursor:"pointer"}}>구매</button></div>);})}</div>}
+          {tab==="cart"&&<div style={{background:"#f8fafc",minHeight:"100%",display:"flex",flexDirection:"column"}}>{cartItems.length===0?(<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,padding:"60px 0"}}><p style={{color:"#94a3b8",fontSize:13,fontWeight:700}}>장바구니에 상품이 없습니다.</p></div>):(<div style={{padding:14,display:"flex",flexDirection:"column",gap:14,paddingBottom:140}}>{cartItems.map(function(item){return(<div key={item.id} style={{background:"white",borderRadius:18,padding:14,boxShadow:"0 1px 4px rgba(0,0,0,0.05)",border:"1px solid #f1f5f9"}}><div style={{display:"flex",gap:10,marginBottom:10}}><ProductImage size={56} radius={10}/><div style={{flex:1,minWidth:0}}><h4 style={{fontSize:11,fontWeight:700,color:"#0f172a"}}>{item.name}</h4><p style={{fontSize:13,fontWeight:900,color:"#0f172a",marginTop:3}}>{item.price}</p></div></div><div style={{display:"flex",alignItems:"center",gap:7}}><div style={{display:"flex",alignItems:"center",border:"1px solid #e2e8f0",borderRadius:9,overflow:"hidden",width:76,flexShrink:0}}><button onClick={()=>onQtyChange(item.id,-1)} style={{padding:"5px 7px",background:"none",border:"none",cursor:"pointer",color:"#94a3b8"}}><Icon.Minus/></button><span style={{flex:1,fontSize:11,fontWeight:900,color:"#0f172a",textAlign:"center"}}>{cartQty[item.id]||1}</span><button onClick={()=>onQtyChange(item.id,1)} style={{padding:"5px 7px",background:"none",border:"none",cursor:"pointer",color:"#94a3b8"}}><Icon.Plus/></button></div><div style={{flex:1,display:"flex",gap:6,height:32}}><button onClick={()=>onCartRemove(item.id)} style={{width:48,fontSize:11,fontWeight:700,color:"#64748b",background:"#f8fafc",border:"1px solid #f1f5f9",borderRadius:10,cursor:"pointer"}}>삭제</button><button style={{flex:1,fontSize:11,fontWeight:900,color:"white",background:"#f43f5e",border:"none",borderRadius:10,cursor:"pointer"}}>바로구매</button></div></div></div>);})}<div style={{background:"white",borderRadius:18,padding:18,display:"flex",flexDirection:"column",gap:10}}>{[["총 주문금액",orderTotal.toLocaleString()+"원"],["쿠폰 할인","-"+discount.toLocaleString()+"원"],["배송비","0원"]].map(function(arr){return(<div key={arr[0]} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#64748b"}}><span>{arr[0]}</span><span style={{fontWeight:900,color:"#1e293b"}}>{arr[1]}</span></div>);})}<div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:"1px solid #f8fafc"}}><span style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>총 결제 금액</span><span style={{fontSize:16,fontWeight:900,color:"#f43f5e"}}>{payTotal.toLocaleString()}원</span></div></div></div>)}</div>}
         </div>
         {tab==="cart"&&cartItems.length>0&&<div style={{position:"absolute",bottom:0,left:0,right:0,background:"white",borderTop:"1px solid #f1f5f9",padding:"14px 16px",zIndex:2}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}><div><span style={{background:"#fff1f2",color:"#f43f5e",fontSize:9,fontWeight:900,padding:"2px 7px",borderRadius:5,display:"block",width:"max-content"}}>30,000원 할인 적용</span><span style={{fontSize:14,fontWeight:900,color:"#0f172a",display:"block",marginTop:3}}>총 {payTotal.toLocaleString()}원</span></div><button style={{background:"#f43f5e",color:"white",fontWeight:900,height:48,padding:"0 22px",borderRadius:14,border:"none",cursor:"pointer",fontSize:13,flex:1,maxWidth:150}}>구매하기 ({cartItems.length})</button></div></div>}
       </div>
@@ -416,12 +431,12 @@ function SellerManagePopup({ isOpen, onClose, products, currentUpId, onToggleUp 
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px",borderBottom:"1px solid #f1f5f9",flexShrink:0}}><span style={{color:"#94a3b8"}}><Icon.RotateCcw/></span><h3 style={{fontSize:15,fontWeight:900,color:"#0f172a"}}>판매상품 <span style={{color:"#f43f5e"}}>{products.length}</span></h3><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:"#1e293b"}}><Icon.X/></button></div>
         <div style={{flex:1,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:14}}>
           <p style={{textAlign:"center",fontSize:11,color:"#64748b",fontWeight:700}}>지금 이 순간 홍보하고 있는 상품을 <span style={{color:"#f43f5e"}}>NOW</span> 해주세요.</p>
-          {products.map(p=>(
+          {products.map(function(p){return(
             <div key={p.id} style={{background:"white",borderRadius:20,border:"1px solid #f1f5f9",boxShadow:"0 1px 4px rgba(0,0,0,0.05)",padding:14,display:"flex",flexDirection:"column",gap:12}}>
               <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductImage size={50} radius={10}/><div style={{flex:1,minWidth:0}}><h4 style={{fontSize:11,fontWeight:700,color:"#0f172a"}}>{p.name}</h4><p style={{fontSize:13,fontWeight:900,marginTop:2}}>{p.price}</p></div><button onClick={()=>onToggleUp(p)} style={{width:58,height:34,borderRadius:10,background:currentUpId===p.id?"#f43f5e":"#cbd5e1",color:"white",fontWeight:900,fontSize:12,border:"none",cursor:"pointer"}}>NOW</button></div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"#f8fafc",borderRadius:14,border:"1px solid #f1f5f9"}}>{[["판매 가능",p.total],["주문 완료",0],["점유 수량",0]].map(([label,val],i)=>(<div key={label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,borderLeft:i>0?"1px solid #e2e8f0":"none"}}><span style={{fontSize:9,color:"#94a3b8",fontWeight:700}}>{label}</span><span style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>{val}</span></div>))}</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"#f8fafc",borderRadius:14,border:"1px solid #f1f5f9"}}>{[["판매 가능",p.total],["주문 완료",0],["점유 수량",0]].map(function(arr,i){return(<div key={arr[0]} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,borderLeft:i>0?"1px solid #e2e8f0":"none"}}><span style={{fontSize:9,color:"#94a3b8",fontWeight:700}}>{arr[0]}</span><span style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>{arr[1]}</span></div>);})}</div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
     </div>
@@ -431,13 +446,13 @@ function SellerManagePopup({ isOpen, onClose, products, currentUpId, onToggleUp 
 function CustomerGamePopup({ isOpen, onClose, gameState, countdown, onTap, tapResult, rank, onAddToCart }) {
   const [ripples,setRipples]=useState([]);
   const [showOption,setShowOption]=useState(false);
-  useEffect(()=>{ if(tapResult==="winner") setTimeout(()=>setShowOption(true),800); },[tapResult]);
-  const handleTap=()=>{
+  useEffect(()=>{ if(tapResult==="winner") setTimeout(function(){setShowOption(true);},800); },[tapResult]);
+  var handleTap=function(){
     if(gameState!=="open"||tapResult) return;
-    const id=Date.now(); setRipples(r=>[...r,id]); setTimeout(()=>setRipples(r=>r.filter(x=>x!==id)),600); onTap();
+    var id=Date.now(); setRipples(function(r){return [...r,id];}); setTimeout(function(){setRipples(function(r){return r.filter(function(x){return x!==id;});});},600); onTap();
   };
   if(!isOpen) return null;
-  if(showOption) return <OptionPopup isOpen={true} onClose={()=>{setShowOption(false);onClose();}} product={GAME_PRODUCT} onAddToCart={(p,q)=>{onAddToCart(p,q);setShowOption(false);onClose();}}/>;
+  if(showOption) return <OptionPopup isOpen={true} onClose={function(){setShowOption(false);onClose();}} product={GAME_PRODUCT} onAddToCart={function(p,q){onAddToCart(p,q);setShowOption(false);onClose();}}/>;
   return (
     <div style={{position:"absolute",inset:0,zIndex:50,display:"flex",alignItems:"flex-end"}}>
       <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}} onClick={onClose}/>
@@ -457,7 +472,7 @@ function CustomerGamePopup({ isOpen, onClose, gameState, countdown, onTap, tapRe
             <div style={{padding:"10px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
               <p style={{fontSize:12,fontWeight:900,color:"#f43f5e"}}>⚡ 지금 바로 터치!</p>
               <div style={{position:"relative"}}>
-                {ripples.map(id=><div key={id} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(244,63,94,0.3)",animation:"ripple 0.6s ease-out",transformOrigin:"center"}}/>)}
+                {ripples.map(function(id){return <div key={id} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(244,63,94,0.3)",animation:"ripple 0.6s ease-out",transformOrigin:"center"}}/>;})}
                 <button onClick={handleTap} style={{width:130,height:130,borderRadius:"50%",background:"#f43f5e",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 30px rgba(244,63,94,0.4)",color:"white",fontWeight:900,fontSize:18}}><span style={{fontSize:36}}>👆</span><span>터치!</span></button>
               </div>
             </div>
@@ -477,7 +492,7 @@ function RaffleSetupPopup({ onCancel, onStart }) {
   const [price, setPrice] = useState("");
   const [target, setTarget] = useState("모든 이용자");
   const [dropOpen, setDropOpen] = useState(false);
-  const TARGET_OPTIONS = ["모든 이용자", "팔로워만", "방송구매자만", "방송초대자만"];
+  var TARGET_OPTIONS = ["모든 이용자", "팔로워만", "방송구매자만", "방송초대자만"];
   return (
     <div style={{position:"absolute",inset:0,zIndex:60,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}} onClick={onCancel}/>
@@ -488,40 +503,28 @@ function RaffleSetupPopup({ onCancel, onStart }) {
         </div>
         <div style={{margin:"0 18px",paddingBottom:14,borderBottom:"1px solid #e2e8f0",textAlign:"center"}}>
           <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}>
-            <input type="number" inputMode="numeric" value={people}
-              onChange={e=>{const v=e.target.value.replace(/[^0-9]/g,"");setPeople(v===""?"":String(Math.min(100,parseInt(v)||0)));}}
-              style={{fontSize:34,fontWeight:700,color:"#f97316",border:"none",borderBottom:"2px solid #f97316",outline:"none",width:80,textAlign:"center",background:"transparent",fontFamily:"inherit"}}/>
+            <input type="number" inputMode="numeric" value={people} onChange={function(e){var v=e.target.value.replace(/[^0-9]/g,"");setPeople(v===""?"":String(Math.min(100,parseInt(v)||0)));}} style={{fontSize:34,fontWeight:700,color:"#f97316",border:"none",borderBottom:"2px solid #f97316",outline:"none",width:80,textAlign:"center",background:"transparent",fontFamily:"inherit"}}/>
             <span style={{fontSize:14,color:"#64748b"}}>명&nbsp;최대 100명</span>
           </div>
         </div>
         <div style={{margin:"0 18px",paddingTop:14,paddingBottom:14,borderBottom:"1px solid #e2e8f0",textAlign:"center"}}>
-          <input type="number" inputMode="numeric" value={price}
-            onChange={e=>setPrice(e.target.value.replace(/[^0-9]/g,""))}
-            placeholder="가격 입력 (선택)"
-            style={{fontSize:16,fontWeight:500,border:"none",borderBottom:"1px solid #e2e8f0",outline:"none",width:"100%",textAlign:"center",background:"transparent",fontFamily:"inherit",padding:"6px 0",color:"#94a3b8"}}/>
+          <input type="number" inputMode="numeric" value={price} onChange={function(e){setPrice(e.target.value.replace(/[^0-9]/g,""));}} placeholder="가격 입력 (선택)" style={{fontSize:16,border:"none",borderBottom:"1px solid #e2e8f0",outline:"none",width:"100%",textAlign:"center",background:"transparent",fontFamily:"inherit",padding:"6px 0",color:"#94a3b8"}}/>
         </div>
         <div style={{margin:"14px 18px",position:"relative"}}>
-          <button onClick={()=>setDropOpen(o=>!o)}
-            style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"none",border:"none",cursor:"pointer",fontSize:15,fontWeight:700,color:"#0f172a",padding:"4px 0"}}>
+          <button onClick={function(){setDropOpen(function(o){return !o;});}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"none",border:"none",cursor:"pointer",fontSize:15,fontWeight:700,color:"#0f172a",padding:"4px 0"}}>
             {target}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           {dropOpen && (
             <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"white",border:"1px solid #e2e8f0",borderRadius:12,zIndex:20,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,0.12)"}}>
-              {TARGET_OPTIONS.map(opt=>(
-                <div key={opt} onClick={()=>{setTarget(opt);setDropOpen(false);}}
-                  style={{padding:"12px 16px",fontSize:14,fontWeight:600,color:target===opt?"#f97316":"#0f172a",background:target===opt?"#fff7ed":"white",cursor:"pointer",borderBottom:"1px solid #f8fafc",textAlign:"center"}}>
-                  {opt}
-                </div>
-              ))}
+              {TARGET_OPTIONS.map(function(opt){return(
+                <div key={opt} onClick={function(){setTarget(opt);setDropOpen(false);}} style={{padding:"12px 16px",fontSize:14,fontWeight:600,color:target===opt?"#f97316":"#0f172a",background:target===opt?"#fff7ed":"white",cursor:"pointer",borderBottom:"1px solid #f8fafc",textAlign:"center"}}>{opt}</div>
+              );})}
             </div>
           )}
         </div>
         <div style={{padding:"6px 18px 8px"}}>
-          <button onClick={()=>onStart(parseInt(people)||1, parseInt(price)||0)}
-            style={{width:"100%",height:48,background:"#f97316",borderRadius:9999,fontWeight:700,fontSize:15,color:"white",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(249,115,22,0.4)"}}>
-            추첨 시작
-          </button>
+          <button onClick={function(){onStart(parseInt(people)||1, parseInt(price)||0, target);}} style={{width:"100%",height:48,background:"#f97316",borderRadius:9999,fontWeight:700,fontSize:15,color:"white",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(249,115,22,0.4)"}}>추첨 시작</button>
         </div>
         <div style={{textAlign:"center",padding:"10px 0 16px"}}>
           <button onClick={onCancel} style={{background:"none",border:"none",fontSize:14,color:"#64748b",cursor:"pointer"}}>취소</button>
@@ -537,52 +540,56 @@ function SellerGamePopup({ isOpen, onClose, gameState, onReady, onStartCountdown
   const [price,setPrice]=useState("200");
   useEffect(()=>{ if(!isOpen){ setStep("select"); } },[isOpen]);
   if(!isOpen) return null;
-  const GAMES=[
+  var GAMES=[
     {key:"firstcome",emoji:"🤚",label:"선착순",bg:"#c0392b"},
     {key:"raffle",emoji:"👇",label:"추첨",bg:"#7d6a1e"},
     {key:"auction",emoji:"🔨",label:"경매",bg:"#7d5a1e"},
     {key:"ox",emoji:"🅾✖",label:"OX",bg:"#2e6b3e"},
     {key:"initial",emoji:"🔤",label:"초성퀴즈",bg:"#1e4d6b"},
   ];
-  const GameBar=()=>(<div style={{background:"#111827",padding:"14px 10px 32px",display:"flex",justifyContent:"space-around",borderTop:"1px solid rgba(255,255,255,0.08)"}}>{GAMES.map(g=>(<div key={g.key} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:52}}><div style={{width:54,height:54,borderRadius:9999,background:g.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,opacity:(g.key==="firstcome"||g.key==="raffle")?1:0.4}}>{g.emoji}</div><span style={{fontSize:10,color:(g.key==="firstcome"||g.key==="raffle")?"white":"#475569",fontWeight:900}}>{g.label}</span></div>))}</div>);
+  var GameBar=function(){return(<div style={{background:"#111827",padding:"14px 10px 32px",display:"flex",justifyContent:"space-around",borderTop:"1px solid rgba(255,255,255,0.08)"}}>{GAMES.map(function(g){var active=g.key==="firstcome"||g.key==="raffle";return(<div key={g.key} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:52}}><div style={{width:54,height:54,borderRadius:9999,background:g.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,opacity:active?1:0.4}}>{g.emoji}</div><span style={{fontSize:10,color:active?"white":"#475569",fontWeight:900}}>{g.label}</span></div>);})}</div>);};
   if(step==="select") return (
     <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:48}}>
       <div style={{position:"absolute",bottom:"100%",left:0,right:0,top:-9999}} onClick={onClose}/>
       <div style={{background:"#111827",padding:"14px 10px 32px",display:"flex",justifyContent:"space-around",borderTop:"1px solid rgba(255,255,255,0.08)"}}>
-        {GAMES.map(g=>(<div key={g.key} onClick={()=>(g.key==="firstcome"?setStep("alert"):g.key==="raffle"?setStep("raffle_alert"):null)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:52,cursor:(g.key==="firstcome"||g.key==="raffle")?"pointer":"default"}}><div style={{width:54,height:54,borderRadius:9999,background:g.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,opacity:(g.key==="firstcome"||g.key==="raffle")?1:0.4}}>{g.emoji}</div><span style={{fontSize:10,color:(g.key==="firstcome"||g.key==="raffle")?"white":"#475569",fontWeight:900}}>{g.label}</span></div>))}
+        {GAMES.map(function(g){var active=g.key==="firstcome"||g.key==="raffle";return(<div key={g.key} onClick={function(){if(g.key==="firstcome")setStep("alert");else if(g.key==="raffle")setStep("raffle_alert");}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:52,cursor:active?"pointer":"default"}}><div style={{width:54,height:54,borderRadius:9999,background:g.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,opacity:active?1:0.4}}>{g.emoji}</div><span style={{fontSize:10,color:active?"white":"#475569",fontWeight:900}}>{g.label}</span></div>);})}
       </div>
     </div>
   );
   if(step==="raffle_alert") return (
-    <><div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:48}}><GameBar/></div>
-    <div style={{position:"absolute",inset:0,zIndex:60,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.45)"}}>
-      <div style={{width:270,background:"rgba(242,242,247,0.98)",borderRadius:14,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
-        <div style={{padding:"20px 16px 14px",textAlign:"center",borderBottom:"0.5px solid rgba(0,0,0,0.18)"}}><p style={{fontSize:17,fontWeight:700,color:"#000",marginBottom:6}}>추첨 게임을<br/>시작하시겠습니까?</p><p style={{fontSize:13,color:"#3c3c43",lineHeight:1.5}}>참여한 사람 중에 추첨하여<br/>n명을 뽑는 게임입니다.</p></div>
-        <div style={{display:"flex"}}><button onClick={()=>setStep("select")} style={{flex:1,height:44,background:"none",border:"none",borderRight:"0.5px solid rgba(0,0,0,0.18)",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:400}}>취소</button><button onClick={()=>setStep("raffle_setup")} style={{flex:1,height:44,background:"none",border:"none",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:700}}>확인</button></div>
+    <div>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:48}}><GameBar/></div>
+      <div style={{position:"absolute",inset:0,zIndex:60,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.45)"}}>
+        <div style={{width:270,background:"rgba(242,242,247,0.98)",borderRadius:14,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+          <div style={{padding:"20px 16px 14px",textAlign:"center",borderBottom:"0.5px solid rgba(0,0,0,0.18)"}}><p style={{fontSize:17,fontWeight:700,color:"#000",marginBottom:6}}>추첨 게임을<br/>시작하시겠습니까?</p><p style={{fontSize:13,color:"#3c3c43",lineHeight:1.5}}>참여한 사람 중에 추첨하여<br/>n명을 뽑는 게임입니다.</p></div>
+          <div style={{display:"flex"}}><button onClick={function(){setStep("select");}} style={{flex:1,height:44,background:"none",border:"none",borderRight:"0.5px solid rgba(0,0,0,0.18)",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:400}}>취소</button><button onClick={function(){setStep("raffle_setup");}} style={{flex:1,height:44,background:"none",border:"none",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:700}}>확인</button></div>
+        </div>
       </div>
-    </div></>
+    </div>
   );
-  if(step==="raffle_setup") {
-    return <RaffleSetupPopup onCancel={()=>setStep("select")} onStart={(p,pr)=>{onReady(p,pr,"raffle");onClose();setStep("select");}}/>;
-  }
+  if(step==="raffle_setup") return (
+    <RaffleSetupPopup onCancel={function(){setStep("select");}} onStart={function(p,pr,tgt){onReady(p,pr,"raffle",tgt);onClose();setStep("select");}}/>
+  );
   if(step==="alert") return (
-    <><div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:48}}><GameBar/></div>
-    <div style={{position:"absolute",inset:0,zIndex:60,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.45)"}}>
-      <div style={{width:270,background:"rgba(242,242,247,0.98)",borderRadius:14,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
-        <div style={{padding:"20px 16px 14px",textAlign:"center",borderBottom:"0.5px solid rgba(0,0,0,0.18)"}}><p style={{fontSize:17,fontWeight:700,color:"#000",marginBottom:6}}>선착순 게임을<br/>시작하시겠습니까?</p><p style={{fontSize:13,color:"#3c3c43",lineHeight:1.5}}>선착순 게임은 가장 먼저 손 드는 사람이 이기는 게임입니다.</p></div>
-        <div style={{display:"flex"}}><button onClick={()=>setStep("select")} style={{flex:1,height:44,background:"none",border:"none",borderRight:"0.5px solid rgba(0,0,0,0.18)",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:400}}>취소</button><button onClick={()=>setStep("setup")} style={{flex:1,height:44,background:"none",border:"none",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:700}}>확인</button></div>
+    <div>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:48}}><GameBar/></div>
+      <div style={{position:"absolute",inset:0,zIndex:60,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.45)"}}>
+        <div style={{width:270,background:"rgba(242,242,247,0.98)",borderRadius:14,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+          <div style={{padding:"20px 16px 14px",textAlign:"center",borderBottom:"0.5px solid rgba(0,0,0,0.18)"}}><p style={{fontSize:17,fontWeight:700,color:"#000",marginBottom:6}}>선착순 게임을<br/>시작하시겠습니까?</p><p style={{fontSize:13,color:"#3c3c43",lineHeight:1.5}}>선착순 게임은 가장 먼저 손 드는 사람이 이기는 게임입니다.</p></div>
+          <div style={{display:"flex"}}><button onClick={function(){setStep("select");}} style={{flex:1,height:44,background:"none",border:"none",borderRight:"0.5px solid rgba(0,0,0,0.18)",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:400}}>취소</button><button onClick={function(){setStep("setup");}} style={{flex:1,height:44,background:"none",border:"none",fontSize:17,color:"#0a84ff",cursor:"pointer",fontWeight:700}}>확인</button></div>
+        </div>
       </div>
-    </div></>
+    </div>
   );
   if(step==="setup") return (
     <div style={{position:"absolute",inset:0,zIndex:60,display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}} onClick={()=>setStep("select")}/>
+      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}} onClick={function(){setStep("select");}}/>
       <div style={{position:"relative",zIndex:1,background:"white",borderRadius:20,width:"82%",overflow:"hidden",boxShadow:"0 20px 50px rgba(0,0,0,0.4)"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 18px 10px"}}><h3 style={{fontSize:16,fontWeight:700,color:"#0f172a"}}>선착순</h3><span style={{fontSize:18}}>✏️</span></div>
-        <div style={{margin:"0 18px",paddingBottom:14,borderBottom:"1px solid #e2e8f0",textAlign:"center"}}><div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}><input type="number" inputMode="numeric" value={people} onChange={e=>{const v=e.target.value.replace(/[^0-9]/g,"");setPeople(v===""?"":String(Math.min(100,parseInt(v)||0)));}} style={{fontSize:34,fontWeight:700,color:"#f43f5e",border:"none",outline:"none",width:80,textAlign:"center",background:"transparent",fontFamily:"inherit"}}/><span style={{fontSize:14,color:"#64748b"}}>명&nbsp;최대 100명</span></div></div>
-        <div style={{margin:"0 18px",paddingTop:14,paddingBottom:16,borderBottom:"1px solid #e2e8f0",textAlign:"center"}}><div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}><input type="number" inputMode="numeric" value={price} onChange={e=>{const v=e.target.value.replace(/[^0-9]/g,"");setPrice(v);}} style={{fontSize:34,fontWeight:700,color:"#f43f5e",border:"none",outline:"none",width:120,textAlign:"center",background:"transparent",fontFamily:"inherit"}}/><span style={{fontSize:14,color:"#64748b"}}>원</span></div></div>
-        <div style={{padding:"14px 18px 6px"}}><button onClick={()=>{onReady(parseInt(people)||1,parseInt(price)||0);onClose();setStep("select");}} style={{width:"100%",height:48,background:"#f43f5e",borderRadius:9999,fontWeight:700,fontSize:15,color:"white",border:"none",cursor:"pointer"}}>선착순 시작</button></div>
-        <div style={{textAlign:"center",padding:"10px 0 14px"}}><button onClick={()=>setStep("select")} style={{background:"none",border:"none",fontSize:14,color:"#64748b",cursor:"pointer"}}>취소</button></div>
+        <div style={{margin:"0 18px",paddingBottom:14,borderBottom:"1px solid #e2e8f0",textAlign:"center"}}><div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}><input type="number" inputMode="numeric" value={people} onChange={function(e){var v=e.target.value.replace(/[^0-9]/g,"");setPeople(v===""?"":String(Math.min(100,parseInt(v)||0)));}} style={{fontSize:34,fontWeight:700,color:"#f43f5e",border:"none",outline:"none",width:80,textAlign:"center",background:"transparent",fontFamily:"inherit"}}/><span style={{fontSize:14,color:"#64748b"}}>명&nbsp;최대 100명</span></div></div>
+        <div style={{margin:"0 18px",paddingTop:14,paddingBottom:16,borderBottom:"1px solid #e2e8f0",textAlign:"center"}}><div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}><input type="number" inputMode="numeric" value={price} onChange={function(e){setPrice(e.target.value.replace(/[^0-9]/g,""));}} style={{fontSize:34,fontWeight:700,color:"#f43f5e",border:"none",outline:"none",width:120,textAlign:"center",background:"transparent",fontFamily:"inherit"}}/><span style={{fontSize:14,color:"#64748b"}}>원</span></div></div>
+        <div style={{padding:"14px 18px 6px"}}><button onClick={function(){onReady(parseInt(people)||1,parseInt(price)||0,"firstcome");onClose();setStep("select");}} style={{width:"100%",height:48,background:"#f43f5e",borderRadius:9999,fontWeight:700,fontSize:15,color:"white",border:"none",cursor:"pointer"}}>선착순 시작</button></div>
+        <div style={{textAlign:"center",padding:"10px 0 14px"}}><button onClick={function(){setStep("select");}} style={{background:"none",border:"none",fontSize:14,color:"#64748b",cursor:"pointer"}}>취소</button></div>
       </div>
     </div>
   );
@@ -594,10 +601,10 @@ function SellerGamePopup({ isOpen, onClose, gameState, onReady, onStartCountdown
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 16px"}}><h3 style={{fontSize:15,fontWeight:900,color:"#0f172a"}}>⚡ 선착순 게임</h3><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:"#1e293b"}}><Icon.X/></button></div>
         <div style={{padding:"0 16px 28px",display:"flex",flexDirection:"column",gap:14}}>
           <div style={{padding:"12px 14px",background:"#f8fafc",borderRadius:14,border:"1px solid #f1f5f9"}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:12,fontWeight:700,color:"#64748b"}}>참여 현황</span><span style={{fontSize:13,fontWeight:900,color:"#f43f5e"}}>{participants}명 참여 중</span></div></div>
-          {gameState==="ready"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><button onClick={onStartCountdown} style={{width:"100%",height:50,background:"#f43f5e",borderRadius:16,fontWeight:900,fontSize:14,color:"white",border:"none",cursor:"pointer"}}>⚡ 카운트다운 시작!</button><button onClick={()=>{onEndGame();onClose();setStep("select");}} style={{width:"100%",height:44,background:"#f43f5e",borderRadius:14,fontWeight:900,fontSize:13,color:"white",border:"none",cursor:"pointer"}}>게임 종료</button></div>}
-          {gameState==="countdown"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><div style={{height:50,display:"flex",alignItems:"center",justifyContent:"center",background:"#f8fafc",borderRadius:16}}><span style={{fontSize:14,fontWeight:900,color:"#f43f5e"}}>진행 중...</span></div><button onClick={()=>{onEndGame();onClose();setStep("select");}} style={{width:"100%",height:44,background:"#f43f5e",borderRadius:14,fontWeight:900,fontSize:13,color:"white",border:"none",cursor:"pointer"}}>게임 종료</button></div>}
-          {gameState==="open"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><div style={{height:50,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff1f2",borderRadius:16,border:"1px solid #fecdd3"}}><span style={{fontSize:14,fontWeight:900,color:"#f43f5e"}}>⚡ 선착 진행 중!</span></div><button onClick={()=>{onEndGame();onClose();setStep("select");}} style={{width:"100%",height:44,background:"#f43f5e",borderRadius:14,fontWeight:900,fontSize:13,color:"white",border:"none",cursor:"pointer"}}>게임 종료</button></div>}
-          {gameState==="done"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><div style={{height:50,display:"flex",alignItems:"center",justifyContent:"center",background:"#f0fdf4",borderRadius:16,border:"1px solid #bbf7d0"}}><span style={{fontSize:14,fontWeight:900,color:"#16a34a"}}>✅ 마감 완료</span></div><button onClick={()=>{onReset();setStep("select");}} style={{width:"100%",height:44,background:"#f1f5f9",borderRadius:14,fontWeight:900,fontSize:13,color:"#64748b",border:"none",cursor:"pointer"}}>다시하기</button></div>}
+          {gameState==="ready"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><button onClick={onStartCountdown} style={{width:"100%",height:50,background:"#f43f5e",borderRadius:16,fontWeight:900,fontSize:14,color:"white",border:"none",cursor:"pointer"}}>⚡ 카운트다운 시작!</button><button onClick={function(){onEndGame();onClose();setStep("select");}} style={{width:"100%",height:44,background:"#f43f5e",borderRadius:14,fontWeight:900,fontSize:13,color:"white",border:"none",cursor:"pointer"}}>게임 종료</button></div>}
+          {gameState==="countdown"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><div style={{height:50,display:"flex",alignItems:"center",justifyContent:"center",background:"#f8fafc",borderRadius:16}}><span style={{fontSize:14,fontWeight:900,color:"#f43f5e"}}>진행 중...</span></div><button onClick={function(){onEndGame();onClose();setStep("select");}} style={{width:"100%",height:44,background:"#f43f5e",borderRadius:14,fontWeight:900,fontSize:13,color:"white",border:"none",cursor:"pointer"}}>게임 종료</button></div>}
+          {gameState==="open"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><div style={{height:50,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff1f2",borderRadius:16,border:"1px solid #fecdd3"}}><span style={{fontSize:14,fontWeight:900,color:"#f43f5e"}}>⚡ 선착 진행 중!</span></div><button onClick={function(){onEndGame();onClose();setStep("select");}} style={{width:"100%",height:44,background:"#f43f5e",borderRadius:14,fontWeight:900,fontSize:13,color:"white",border:"none",cursor:"pointer"}}>게임 종료</button></div>}
+          {gameState==="done"&&<div style={{display:"flex",flexDirection:"column",gap:8}}><div style={{height:50,display:"flex",alignItems:"center",justifyContent:"center",background:"#f0fdf4",borderRadius:16,border:"1px solid #bbf7d0"}}><span style={{fontSize:14,fontWeight:900,color:"#16a34a"}}>완료</span></div><button onClick={function(){onReset();setStep("select");}} style={{width:"100%",height:44,background:"#f1f5f9",borderRadius:14,fontWeight:900,fontSize:13,color:"#64748b",border:"none",cursor:"pointer"}}>다시하기</button></div>}
         </div>
       </div>
     </div>
@@ -607,22 +614,22 @@ function SellerGamePopup({ isOpen, onClose, gameState, onReady, onStartCountdown
 function SellerSetupView({ onStart, products }) {
   const [salesType,setSalesType]=useState("store");
   const [title,setTitle]=useState("");
-  const [selectedIds,setSelectedIds]=useState(products.map(p=>p.id));
+  const [selectedIds,setSelectedIds]=useState(products.map(function(p){return p.id;}));
   const [selectPopupOpen,setSelectPopupOpen]=useState(false);
-  const toggleProduct=id=>setSelectedIds(prev=>prev.includes(id)?prev.filter(i=>i!==id):[...prev,id]);
-  const selectedProducts=products.filter(p=>selectedIds.includes(p.id));
-  const optBadgeColor={none:"#64748b",depth1:"#6366f1",depth2:"#0ea5e9",depth3:"#f43f5e"};
+  var toggleProduct=function(id){setSelectedIds(function(prev){return prev.includes(id)?prev.filter(function(i){return i!==id;}):[...prev,id];});};
+  var selectedProducts=products.filter(function(p){return selectedIds.includes(p.id);});
+  var optBadgeColor={none:"#64748b",depth1:"#6366f1",depth2:"#0ea5e9",depth3:"#f43f5e"};
   return (
     <div style={{display:"flex",flexDirection:"column",height:"100%",background:"#0a0a0a",color:"white",overflow:"hidden"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",height:50,borderBottom:"1px solid #111"}}><span style={{color:"white",cursor:"pointer"}}><Icon.X/></span><h1 style={{fontSize:14,fontWeight:900,letterSpacing:"0.15em",textTransform:"uppercase"}}>라이브</h1><div style={{width:20}}/></div>
-      <div style={{display:"flex",padding:"10px 14px",gap:6}}>{["라이브","녹화","연습하기"].map((t,i)=>(<button key={t} style={{flex:1,padding:"10px 0",borderRadius:14,background:i===0?"white":"#222",color:i===0?"black":"#64748b",fontWeight:i===0?900:700,fontSize:12,border:"none",cursor:"pointer"}}>{t}</button>))}</div>
+      <div style={{display:"flex",padding:"10px 14px",gap:6}}>{["라이브","녹화","연습하기"].map(function(t,i){return(<button key={t} style={{flex:1,padding:"10px 0",borderRadius:14,background:i===0?"white":"#222",color:i===0?"black":"#64748b",fontWeight:i===0?900:700,fontSize:12,border:"none",cursor:"pointer"}}>{t}</button>);})}</div>
       <div style={{flex:1,overflowY:"auto",padding:"20px",display:"flex",flexDirection:"column",gap:24}}>
-        <div><div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}><span style={{fontSize:13,fontWeight:900}}>라이브 판매유형</span><span style={{color:"#f43f5e",fontSize:16}}>*</span></div><p style={{fontSize:11,color:"#64748b",marginBottom:10}}>한정판매/스토어 판매 유형을 선택합니다.</p><div style={{display:"flex",gap:24}}>{["limited","store"].map(type=>(<label key={type} onClick={()=>setSalesType(type)} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><div style={{width:18,height:18,borderRadius:9999,border:`2px solid ${salesType===type?"#f43f5e":"#475569"}`,display:"flex",alignItems:"center",justifyContent:"center"}}>{salesType===type&&<div style={{width:9,height:9,borderRadius:9999,background:"#f43f5e"}}/>}</div><span style={{fontSize:13,fontWeight:900,color:salesType===type?"white":"#64748b"}}>{type==="limited"?"한정판매":"스토어판매"}</span></label>))}</div></div>
-        <div style={{borderTop:"1px solid #111",paddingTop:20,display:"flex",gap:18,alignItems:"flex-start"}}><div style={{width:96,height:136,border:"2px dashed #222",borderRadius:20,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",flexShrink:0,color:"#475569"}}><Icon.Camera/><span style={{fontSize:9,color:"#475569",fontWeight:700,textAlign:"center",textTransform:"uppercase"}}>Add Cover</span></div><textarea value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력해 주세요 *" style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,fontWeight:900,color:"white",resize:"none",lineHeight:1.6,minHeight:100,fontFamily:"inherit"}}/></div>
-        <div style={{borderTop:"1px solid #111",paddingTop:18}}><div onClick={()=>setSelectPopupOpen(true)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",borderRadius:14,background:"#111",cursor:"pointer",marginBottom:12}}><div><span style={{fontWeight:900,fontSize:13}}>판매 상품 선택</span><span style={{fontSize:11,color:"#f43f5e",fontWeight:900,marginLeft:8}}>{selectedIds.length}개 선택됨</span></div><span style={{color:"#374151"}}><Icon.ChevronRight size={18}/></span></div><div style={{display:"flex",flexDirection:"column",gap:10}}>{selectedProducts.map(p=>(<div key={p.id} style={{display:"flex",gap:10,alignItems:"center"}}><ProductImage size={36} radius={8}/><div style={{flex:1,minWidth:0}}><span style={{background:optBadgeColor[p.optionType],color:"white",fontSize:8,padding:"1px 5px",borderRadius:3,fontWeight:900}}>{OPTION_BADGE[p.optionType]}</span><p style={{fontSize:11,fontWeight:700,color:"#94a3b8"}}>{p.name}</p><p style={{fontSize:11,fontWeight:900,color:"white"}}>{p.price}</p></div></div>))}</div></div>
+        <div><div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}><span style={{fontSize:13,fontWeight:900}}>라이브 판매유형</span><span style={{color:"#f43f5e",fontSize:16}}>*</span></div><p style={{fontSize:11,color:"#64748b",marginBottom:10}}>한정판매/스토어 판매 유형을 선택합니다.</p><div style={{display:"flex",gap:24}}>{["limited","store"].map(function(type){return(<label key={type} onClick={function(){setSalesType(type);}} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><div style={{width:18,height:18,borderRadius:9999,border:"2px solid "+(salesType===type?"#f43f5e":"#475569"),display:"flex",alignItems:"center",justifyContent:"center"}}>{salesType===type&&<div style={{width:9,height:9,borderRadius:9999,background:"#f43f5e"}}/>}</div><span style={{fontSize:13,fontWeight:900,color:salesType===type?"white":"#64748b"}}>{type==="limited"?"한정판매":"스토어판매"}</span></label>);})}</div></div>
+        <div style={{borderTop:"1px solid #111",paddingTop:20,display:"flex",gap:18,alignItems:"flex-start"}}><div style={{width:96,height:136,border:"2px dashed #222",borderRadius:20,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",flexShrink:0,color:"#475569"}}><Icon.Camera/><span style={{fontSize:9,color:"#475569",fontWeight:700,textAlign:"center",textTransform:"uppercase"}}>Add Cover</span></div><textarea value={title} onChange={function(e){setTitle(e.target.value);}} placeholder="제목을 입력해 주세요 *" style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,fontWeight:900,color:"white",resize:"none",lineHeight:1.6,minHeight:100,fontFamily:"inherit"}}/></div>
+        <div style={{borderTop:"1px solid #111",paddingTop:18}}><div onClick={function(){setSelectPopupOpen(true);}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",borderRadius:14,background:"#111",cursor:"pointer",marginBottom:12}}><div><span style={{fontWeight:900,fontSize:13}}>판매 상품 선택</span><span style={{fontSize:11,color:"#f43f5e",fontWeight:900,marginLeft:8}}>{selectedIds.length}개 선택됨</span></div><span style={{color:"#374151"}}><Icon.ChevronRight size={18}/></span></div><div style={{display:"flex",flexDirection:"column",gap:10}}>{selectedProducts.map(function(p){return(<div key={p.id} style={{display:"flex",gap:10,alignItems:"center"}}><ProductImage size={36} radius={8}/><div style={{flex:1,minWidth:0}}><span style={{background:optBadgeColor[p.optionType],color:"white",fontSize:8,padding:"1px 5px",borderRadius:3,fontWeight:900}}>{OPTION_BADGE[p.optionType]}</span><p style={{fontSize:11,fontWeight:700,color:"#94a3b8"}}>{p.name}</p><p style={{fontSize:11,fontWeight:900,color:"white"}}>{p.price}</p></div></div>);})}</div></div>
       </div>
       <div style={{padding:"14px 14px 28px"}}><button onClick={onStart} style={{width:"100%",height:56,background:"#f43f5e",borderRadius:20,fontWeight:900,fontSize:16,color:"white",border:"none",cursor:"pointer",letterSpacing:"0.12em",textTransform:"uppercase",boxShadow:"0 10px 25px rgba(244,63,94,0.4)"}}>방송하기</button></div>
-      <ProductSelectPopup isOpen={selectPopupOpen} onClose={()=>setSelectPopupOpen(false)} products={products} selectedIds={selectedIds} onToggle={toggleProduct}/>
+      <ProductSelectPopup isOpen={selectPopupOpen} onClose={function(){setSelectPopupOpen(false);}} products={products} selectedIds={selectedIds} onToggle={toggleProduct}/>
     </div>
   );
 }
@@ -632,16 +639,16 @@ function SellerLiveView({ upProduct, onToggleUp, products, gameState, countdown,
   const [isGameOpen,setIsGameOpen]=useState(false);
   const [msgText,setMsgText]=useState("");
   const [msgs,setMsgs]=useState(CHAT_MSGS);
-  const sendMsg=()=>{ if(!msgText.trim())return; setMsgs(m=>[...m,{id:Date.now(),user:"나",text:msgText,color:"white"}]); setMsgText(""); };
-  const toolbarItems=[
+  var sendMsg=function(){if(!msgText.trim())return;setMsgs(function(m){return [...m,{id:Date.now(),user:"나",text:msgText,color:"white"}];});setMsgText("");};
+  var toolbarItems=[
     {icon:<Icon.Zap size={18} fill="white"/>,label:"플래시",action:null},
-    {icon:<Icon.Gamepad2/>,label:"게임",action:()=>setIsGameOpen(true)},
+    {icon:<Icon.Gamepad2/>,label:"게임",action:function(){setIsGameOpen(true);}},
     {icon:<Icon.Monitor/>,label:"듀얼",action:null},
     {icon:<Icon.RefreshCw/>,label:"카메라",action:null},
     {icon:<Icon.Sparkles/>,label:"효과",action:null},
     {icon:<Icon.Smile/>,label:"스티커",action:null},
   ];
-  const gameActive=gameState==="ready"||gameState==="open"||gameState==="countdown";
+  var gameActive=gameState==="ready"||gameState==="open"||gameState==="countdown";
   return (
     <div style={{position:"relative",height:"100%",background:"#0f172a",overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,backgroundImage:"url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=800&auto=format&fit=crop')",backgroundSize:"cover",backgroundPosition:"center"}}><div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.25)"}}/></div>
@@ -649,20 +656,11 @@ function SellerLiveView({ upProduct, onToggleUp, products, gameState, countdown,
         <div style={{display:"flex",flexDirection:"column",gap:4}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{background:"#dc2626",fontSize:9,padding:"2px 5px",fontWeight:900,borderRadius:4,color:"white",fontStyle:"italic"}}>LIVE</span><div style={{display:"flex",alignItems:"center",gap:3,color:"white",fontSize:10,fontWeight:900}}><Icon.Eye size={12}/> 2,434</div><span style={{color:"white",fontSize:10,fontWeight:900}}>04:01</span></div><h2 style={{color:"white",fontWeight:900,fontSize:12,marginTop:2}}>선풍기 특가판매</h2></div>
         <div style={{display:"flex",gap:10,color:"white"}}><Icon.Share2/><Icon.MoreVertical/><Icon.X/></div>
       </div>
-      {gameActive&&(
+
+      {gameActive && (
         <div style={{position:"absolute",left:14,right:14,zIndex:25,bottom:210}}>
           {gameConfig.type==="raffle" ? (
-            <div style={{background:"rgba(30,20,10,0.82)",backdropFilter:"blur(12px)",borderRadius:20,boxShadow:"0 4px 20px rgba(0,0,0,0.35)",padding:"13px 16px",display:"flex",alignItems:"center",gap:12,border:"1px solid rgba(249,115,22,0.25)"}}>
-              <div style={{width:44,height:44,borderRadius:12,background:"#f97316",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎟️</div>
-              <div style={{flex:1}}>
-                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3}}>
-                  <span style={{fontSize:15,fontWeight:900,color:"white"}}>추첨하기</span>
-                  <span style={{background:"#f97316",color:"white",fontSize:11,fontWeight:900,padding:"2px 9px",borderRadius:9999}}>{gameConfig.people}명</span>
-                </div>
-                <p style={{fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700}}>{participants.toLocaleString()}명 참여 중</p>
-              </div>
-              <button onClick={onEndGame} style={{background:"#f97316",color:"white",fontWeight:900,fontSize:13,border:"none",borderRadius:9999,padding:"9px 20px",cursor:"pointer",boxShadow:"0 2px 8px rgba(249,115,22,0.5)",flexShrink:0}}>추첨</button>
-            </div>
+            <RaffleGameCard gameConfig={gameConfig} participants={participants} buttonLabel="추첨" participated={false} onButtonClick={onEndGame}/>
           ) : (
             <div style={{background:"rgba(255,255,255,0.97)",borderRadius:16,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",overflow:"visible",position:"relative"}}>
               <div style={{position:"absolute",top:-12,left:12,background:"#1e293b",color:"white",fontSize:10,fontWeight:900,padding:"3px 10px",borderRadius:9999}}>지금 소개중</div>
@@ -675,26 +673,27 @@ function SellerLiveView({ upProduct, onToggleUp, products, gameState, countdown,
           )}
         </div>
       )}
+
       {upProduct&&!gameActive&&(
-        <div onClick={()=>setIsManageOpen(true)} style={{position:"absolute",zIndex:20,bottom:205,left:14,right:14,cursor:"pointer"}}>
+        <div onClick={function(){setIsManageOpen(true);}} style={{position:"absolute",zIndex:20,bottom:205,left:14,right:14,cursor:"pointer"}}>
           <div style={{background:"rgba(255,255,255,0.95)",backdropFilter:"blur(12px)",borderRadius:18,display:"flex",alignItems:"center",padding:7,boxShadow:"0 8px 24px rgba(0,0,0,0.18)"}}><ProductImage size={40} radius={9}/><div style={{flex:1,padding:"0 10px",minWidth:0}}><p style={{color:"#0f172a",fontSize:11,fontWeight:700}}>{upProduct.name}</p><p style={{color:"#f43f5e",fontWeight:900,fontSize:12,marginTop:1}}>{upProduct.price}</p></div><div style={{textAlign:"right",paddingRight:6,flexShrink:0}}><p style={{color:"#f43f5e",fontSize:9,fontWeight:900}}>판매가능 {upProduct.total}</p></div></div>
         </div>
       )}
       <div style={{position:"absolute",left:14,right:14,zIndex:10,display:"flex",flexDirection:"column",gap:5,maxWidth:"85%",justifyContent:"flex-end",bottom:205,height:110}}>
-        {msgs.slice(-4).map(m=>(<div key={m.id} style={{background:"rgba(0,0,0,0.25)",padding:"5px 9px",borderRadius:14,border:"1px solid rgba(255,255,255,0.05)",width:"max-content",maxWidth:"100%",backdropFilter:"blur(8px)"}}><p style={{fontSize:11,fontWeight:900}}><span style={{color:m.color}}>{m.user} </span><span style={{color:"white",fontWeight:500}}>{m.text}</span></p></div>))}
+        {msgs.slice(-4).map(function(m){return(<div key={m.id} style={{background:"rgba(0,0,0,0.25)",padding:"5px 9px",borderRadius:14,border:"1px solid rgba(255,255,255,0.05)",width:"max-content",maxWidth:"100%",backdropFilter:"blur(8px)"}}><p style={{fontSize:11,fontWeight:900}}><span style={{color:m.color}}>{m.user} </span><span style={{color:"white",fontWeight:500}}>{m.text}</span></p></div>);})}
       </div>
       <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:30}}>
         <div style={{background:"rgba(31,41,55,0.85)",backdropFilter:"blur(24px)",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,borderTop:"1px solid rgba(255,255,255,0.1)"}}>
-          <div onClick={()=>setIsManageOpen(true)} style={{width:40,height:40,borderRadius:14,background:"white",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer",flexShrink:0,color:"#6366f1"}}><Icon.ShoppingBag size={20}/><div style={{position:"absolute",top:-5,right:-5,background:"#f43f5e",width:18,height:18,borderRadius:9999,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"white",border:"2px solid #1f2937"}}>{products.length}</div></div>
-          <div style={{flex:1,height:40,background:"rgba(0,0,0,0.4)",borderRadius:9999,display:"flex",alignItems:"center",padding:"0 14px",border:"1px solid rgba(255,255,255,0.15)"}}><input value={msgText} onChange={e=>setMsgText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendMsg()} type="text" placeholder="메시지 입력" style={{background:"transparent",border:"none",outline:"none",fontSize:13,color:"white",width:"100%",fontWeight:700,fontFamily:"inherit"}}/></div>
+          <div onClick={function(){setIsManageOpen(true);}} style={{width:40,height:40,borderRadius:14,background:"white",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer",flexShrink:0,color:"#6366f1"}}><Icon.ShoppingBag size={20}/><div style={{position:"absolute",top:-5,right:-5,background:"#f43f5e",width:18,height:18,borderRadius:9999,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"white",border:"2px solid #1f2937"}}>{products.length}</div></div>
+          <div style={{flex:1,height:40,background:"rgba(0,0,0,0.4)",borderRadius:9999,display:"flex",alignItems:"center",padding:"0 14px",border:"1px solid rgba(255,255,255,0.15)"}}><input value={msgText} onChange={function(e){setMsgText(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendMsg();}} type="text" placeholder="메시지 입력" style={{background:"transparent",border:"none",outline:"none",fontSize:13,color:"white",width:"100%",fontWeight:700,fontFamily:"inherit"}}/></div>
           <span style={{color:"white",cursor:"pointer"}}><Icon.Heart fill="none" color="white" size={24}/></span>
         </div>
         <div style={{background:"#111827",padding:"12px 14px 32px",display:"flex",gap:12,overflowX:"auto"}}>
-          {toolbarItems.map(({icon,label,action})=>(<div key={label} onClick={action||undefined} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,flexShrink:0,minWidth:48,cursor:action?"pointer":"default",color:"white"}}><div style={{width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",background:label==="게임"&&gameActive?"#f43f5e":"rgba(255,255,255,0.05)",borderRadius:10,border:label==="게임"&&gameActive?"1px solid #f43f5e":"1px solid rgba(255,255,255,0.05)"}}>{icon}</div><span style={{fontSize:8,color:"white",fontWeight:900}}>{label}</span></div>))}
+          {toolbarItems.map(function(item){var icon=item.icon;var label=item.label;var action=item.action;return(<div key={label} onClick={action||undefined} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,flexShrink:0,minWidth:48,cursor:action?"pointer":"default",color:"white"}}><div style={{width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",background:label==="게임"&&gameActive?"#f43f5e":"rgba(255,255,255,0.05)",borderRadius:10,border:label==="게임"&&gameActive?"1px solid #f43f5e":"1px solid rgba(255,255,255,0.05)"}}>{icon}</div><span style={{fontSize:8,color:"white",fontWeight:900}}>{label}</span></div>);})}
         </div>
       </div>
-      <SellerManagePopup isOpen={isManageOpen} onClose={()=>setIsManageOpen(false)} products={products} currentUpId={upProduct?.id} onToggleUp={onToggleUp}/>
-      <SellerGamePopup isOpen={isGameOpen} onClose={()=>setIsGameOpen(false)} gameState={gameState} onReady={onReady} onStartCountdown={onStartCountdown} onEndGame={onEndGame} onReset={onReset} participants={participants}/>
+      <SellerManagePopup isOpen={isManageOpen} onClose={function(){setIsManageOpen(false);}} products={products} currentUpId={upProduct&&upProduct.id} onToggleUp={onToggleUp}/>
+      <SellerGamePopup isOpen={isGameOpen} onClose={function(){setIsGameOpen(false);}} gameState={gameState} onReady={onReady} onStartCountdown={onStartCountdown} onEndGame={onEndGame} onReset={onReset} participants={participants}/>
     </div>
   );
 }
@@ -709,12 +708,12 @@ function CustomerLiveView({ isLive, upProduct, products, cartItems, cartQty, onA
   const [msgs,setMsgs]=useState(CHAT_MSGS);
   const [liked,setLiked]=useState(false);
   const [participated,setParticipated]=useState(false);
-  useEffect(()=>{ if(gameState==="countdown") setGamePopupOpen(true); },[gameState]);
-  useEffect(()=>{ if(gameState==="idle") setParticipated(false); },[gameState]);
-  useEffect(()=>{ if(forceCartOpen){ setListTab("cart"); setListOpen(true); onForceCartClose(); } },[forceCartOpen]);
-  const openList=(tab="products")=>{ setListTab(tab); setListOpen(true); };
-  const handleAddToCart=(product,qty)=>{ onAddToCart(product,qty); setOptionProduct(null); setListOpen(false); setToastOpen(true); setTimeout(()=>setToastOpen(false),3000); };
-  const sendMsg=()=>{ if(!msg.trim())return; setMsgs(m=>[...m,{id:Date.now(),user:"나",text:msg,color:"white"}]); setMsg(""); };
+  useEffect(function(){ if(gameState==="countdown") setGamePopupOpen(true); },[gameState]);
+  useEffect(function(){ if(gameState==="idle") setParticipated(false); },[gameState]);
+  useEffect(function(){ if(forceCartOpen){ setListTab("cart"); setListOpen(true); onForceCartClose(); } },[forceCartOpen]);
+  var openList=function(tab){ setListTab(tab||"products"); setListOpen(true); };
+  var handleAddToCart=function(product,qty){ onAddToCart(product,qty); setOptionProduct(null); setListOpen(false); setToastOpen(true); setTimeout(function(){setToastOpen(false);},3000); };
+  var sendMsg=function(){ if(!msg.trim())return; setMsgs(function(m){return [...m,{id:Date.now(),user:"나",text:msg,color:"white"}];}); setMsg(""); };
   if(!isLive) return (
     <div style={{height:"100%",background:"#020617",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"white"}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -723,8 +722,8 @@ function CustomerLiveView({ isLive, upProduct, products, cartItems, cartQty, onA
       <p style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center",padding:"0 20px"}}>셀러가 방송을 시작하면<br/>자동으로 연결됩니다</p>
     </div>
   );
-  const BOTTOM_BAR=82, CARD_BOTTOM=BOTTOM_BAR+8, CHAT_BOTTOM=CARD_BOTTOM+70;
-  const gameActive=gameState==="ready"||gameState==="open"||gameState==="countdown";
+  var BOTTOM_BAR=82; var CARD_BOTTOM=BOTTOM_BAR+8; var CHAT_BOTTOM=CARD_BOTTOM+70;
+  var gameActive=gameState==="ready"||gameState==="open"||gameState==="countdown";
   return (
     <div style={{position:"relative",height:"100%",background:"#0f172a",overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,backgroundImage:"url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=800&auto=format&fit=crop')",backgroundSize:"cover",backgroundPosition:"center"}}><div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)"}}/></div>
@@ -736,37 +735,53 @@ function CustomerLiveView({ isLive, upProduct, products, cartItems, cartQty, onA
         <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}><div style={{display:"flex",alignItems:"center",gap:6,background:"rgba(0,0,0,0.3)",backdropFilter:"blur(8px)",borderRadius:9999,padding:"5px 10px",border:"1px solid rgba(255,255,255,0.2)"}}><span style={{background:"#dc2626",fontSize:9,padding:"2px 5px",fontWeight:900,borderRadius:4,color:"white",fontStyle:"italic"}}>LIVE</span><span style={{color:"white",fontSize:11,fontWeight:900}}>04:01</span></div><span style={{color:"white"}}><Icon.X/></span></div>
       </div>
       <div style={{position:"absolute",left:14,zIndex:10,display:"flex",flexDirection:"column",gap:5,maxWidth:"80%",justifyContent:"flex-end",bottom:CHAT_BOTTOM,height:100}}>
-        {msgs.slice(-4).map(m=>(<div key={m.id} style={{background:"rgba(0,0,0,0.2)",padding:"5px 9px",borderRadius:14,border:"1px solid rgba(255,255,255,0.05)",width:"max-content",maxWidth:"100%",backdropFilter:"blur(8px)"}}><p style={{fontSize:11,fontWeight:900}}><span style={{color:m.color}}>{m.user} </span><span style={{color:"white",fontWeight:500}}>{m.text}</span></p></div>))}
+        {msgs.slice(-4).map(function(m){return(<div key={m.id} style={{background:"rgba(0,0,0,0.2)",padding:"5px 9px",borderRadius:14,border:"1px solid rgba(255,255,255,0.05)",width:"max-content",maxWidth:"100%",backdropFilter:"blur(8px)"}}><p style={{fontSize:11,fontWeight:900}}><span style={{color:m.color}}>{m.user} </span><span style={{color:"white",fontWeight:500}}>{m.text}</span></p></div>);})}
       </div>
-      {gameActive&&(
+
+      {gameActive && (
         <div style={{position:"absolute",zIndex:20,bottom:CARD_BOTTOM,left:14,right:14}}>
-          <div style={{background:"rgba(255,255,255,0.97)",backdropFilter:"blur(12px)",borderRadius:18,overflow:"visible",boxShadow:"0 8px 24px rgba(0,0,0,0.18)",border:"1px solid rgba(255,255,255,0.4)",position:"relative"}}>
-            <div style={{position:"absolute",top:-12,left:12,background:"#1e293b",color:"white",fontSize:10,fontWeight:900,padding:"3px 10px",borderRadius:9999}}>지금 소개중</div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 12px 9px",borderBottom:"1px solid #f1f5f9"}}><span style={{fontSize:12,fontWeight:700,color:"#64748b"}}>선착순 상품</span><span style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>{Number(gameConfig?gameConfig.price:0).toLocaleString()}원</span></div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 12px 13px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>🤚</span><div><p style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>선착순 {gameConfig?gameConfig.people:1}명</p><p style={{fontSize:11,color:"#f43f5e",fontWeight:700,marginTop:1}}>{participants}명 참여 중</p></div></div>
-              <button onClick={()=>{ if(!participated){setParticipated(true);onParticipate();} }} style={{background:participated?"#e2b4bc":"#f43f5e",color:"white",fontWeight:900,fontSize:13,border:"none",borderRadius:9999,padding:"8px 18px",cursor:participated?"default":"pointer"}}>{participated?"참여완료":"저요!"}</button>
+          {gameConfig.type==="raffle" ? (
+            <RaffleGameCard
+              gameConfig={gameConfig}
+              participants={participants}
+              participated={participated}
+              buttonLabel={participated ? "참여완료" : "참여"}
+              onButtonClick={function(){
+                if(participated) return;
+                if(gameConfig.target==="방송구매자만"){ alert("방송구매자만 참여가능합니다"); return; }
+                setParticipated(true); onParticipate();
+              }}
+            />
+          ) : (
+            <div style={{background:"rgba(255,255,255,0.97)",backdropFilter:"blur(12px)",borderRadius:18,overflow:"visible",boxShadow:"0 8px 24px rgba(0,0,0,0.18)",border:"1px solid rgba(255,255,255,0.4)",position:"relative"}}>
+              <div style={{position:"absolute",top:-12,left:12,background:"#1e293b",color:"white",fontSize:10,fontWeight:900,padding:"3px 10px",borderRadius:9999}}>지금 소개중</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 12px 9px",borderBottom:"1px solid #f1f5f9"}}><span style={{fontSize:12,fontWeight:700,color:"#64748b"}}>선착순 상품</span><span style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>{Number(gameConfig.price).toLocaleString()}원</span></div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 12px 13px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>🤚</span><div><p style={{fontSize:13,fontWeight:900,color:"#0f172a"}}>선착순 {gameConfig.people}명</p><p style={{fontSize:11,color:"#f43f5e",fontWeight:700,marginTop:1}}>{participants}명 참여 중</p></div></div>
+                <button onClick={function(){if(!participated){setParticipated(true);onParticipate();}}} style={{background:participated?"#e2b4bc":"#f43f5e",color:"white",fontWeight:900,fontSize:13,border:"none",borderRadius:9999,padding:"8px 18px",cursor:participated?"default":"pointer"}}>{participated?"참여완료":"저요!"}</button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
+
       {upProduct&&!gameActive&&(
         <div style={{position:"absolute",zIndex:20,bottom:CARD_BOTTOM,left:14,right:14}}>
-          <div style={{background:"rgba(255,255,255,0.95)",backdropFilter:"blur(12px)",borderRadius:18,display:"flex",alignItems:"center",padding:7,boxShadow:"0 8px 24px rgba(0,0,0,0.18)"}}><ProductImage size={40} radius={9}/><div style={{flex:1,padding:"0 10px",minWidth:0}}><p style={{color:"#0f172a",fontSize:11,fontWeight:700}}>{upProduct.name}</p><p style={{color:"#f43f5e",fontWeight:900,fontSize:12,marginTop:1}}>{upProduct.price}</p></div><button onClick={()=>openList("products")} style={{background:"#0f172a",color:"white",fontSize:11,fontWeight:900,padding:"6px 12px",borderRadius:10,marginRight:3,border:"none",cursor:"pointer"}}>상품보기</button></div>
+          <div style={{background:"rgba(255,255,255,0.95)",backdropFilter:"blur(12px)",borderRadius:18,display:"flex",alignItems:"center",padding:7,boxShadow:"0 8px 24px rgba(0,0,0,0.18)"}}><ProductImage size={40} radius={9}/><div style={{flex:1,padding:"0 10px",minWidth:0}}><p style={{color:"#0f172a",fontSize:11,fontWeight:700}}>{upProduct.name}</p><p style={{color:"#f43f5e",fontWeight:900,fontSize:12,marginTop:1}}>{upProduct.price}</p></div><button onClick={function(){openList("products");}} style={{background:"#0f172a",color:"white",fontSize:11,fontWeight:900,padding:"6px 12px",borderRadius:10,marginRight:3,border:"none",cursor:"pointer"}}>상품보기</button></div>
         </div>
       )}
       <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:20}}>
         <div style={{background:"rgba(17,24,39,0.85)",backdropFilter:"blur(24px)",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,borderTop:"1px solid rgba(255,255,255,0.1)"}}>
-          <div onClick={()=>openList("products")} style={{width:40,height:40,borderRadius:14,background:"white",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer",flexShrink:0,color:"#6366f1"}}><Icon.ShoppingBag size={20}/>{products.length>0&&<div style={{position:"absolute",top:-5,right:-5,background:"#f43f5e",width:18,height:18,borderRadius:9999,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"white",border:"2px solid #111827"}}>{products.length}</div>}</div>
-          <div style={{flex:1,height:40,background:"rgba(0,0,0,0.4)",borderRadius:9999,display:"flex",alignItems:"center",padding:"0 14px",border:"1px solid rgba(255,255,255,0.15)"}}><input value={msg} onChange={e=>setMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendMsg()} type="text" placeholder="메시지 입력" style={{background:"transparent",border:"none",outline:"none",fontSize:12,color:"white",width:"100%",fontWeight:700,fontFamily:"inherit"}}/></div>
-          <button onClick={()=>setLiked(l=>!l)} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><Icon.Heart fill={liked?"#f43f5e":"none"} color={liked?"#f43f5e":"white"} size={24}/></button>
+          <div onClick={function(){openList("products");}} style={{width:40,height:40,borderRadius:14,background:"white",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer",flexShrink:0,color:"#6366f1"}}><Icon.ShoppingBag size={20}/>{products.length>0&&<div style={{position:"absolute",top:-5,right:-5,background:"#f43f5e",width:18,height:18,borderRadius:9999,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"white",border:"2px solid #111827"}}>{products.length}</div>}</div>
+          <div style={{flex:1,height:40,background:"rgba(0,0,0,0.4)",borderRadius:9999,display:"flex",alignItems:"center",padding:"0 14px",border:"1px solid rgba(255,255,255,0.15)"}}><input value={msg} onChange={function(e){setMsg(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendMsg();}} type="text" placeholder="메시지 입력" style={{background:"transparent",border:"none",outline:"none",fontSize:12,color:"white",width:"100%",fontWeight:700,fontFamily:"inherit"}}/></div>
+          <button onClick={function(){setLiked(function(l){return !l;});}} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><Icon.Heart fill={liked?"#f43f5e":"none"} color={liked?"#f43f5e":"white"} size={24}/></button>
         </div>
         <div style={{background:"rgba(17,24,39,0.8)",height:32}}/>
       </div>
-      <ProductListPopup isOpen={listOpen} onClose={()=>setListOpen(false)} initialTab={listTab} products={products} cartItems={cartItems} cartQty={cartQty} onProductSelect={p=>{setListOpen(false);setOptionProduct(p);}} onQtyChange={onQtyChange} onCartRemove={onCartRemove}/>
-      <OptionPopup isOpen={!!optionProduct} onClose={()=>setOptionProduct(null)} product={optionProduct} onAddToCart={handleAddToCart}/>
-      <CartToast isOpen={toastOpen} onClose={()=>setToastOpen(false)} onGoToCart={()=>{setToastOpen(false);openList("cart");}}/>
-      <CustomerGamePopup isOpen={gamePopupOpen} onClose={()=>setGamePopupOpen(false)} gameState={gameState} countdown={countdown} onTap={onTap} tapResult={tapResult} rank={rank} onAddToCart={handleAddToCart}/>
+      <ProductListPopup isOpen={listOpen} onClose={function(){setListOpen(false);}} initialTab={listTab} products={products} cartItems={cartItems} cartQty={cartQty} onProductSelect={function(p){setListOpen(false);setOptionProduct(p);}} onQtyChange={onQtyChange} onCartRemove={onCartRemove}/>
+      <OptionPopup isOpen={!!optionProduct} onClose={function(){setOptionProduct(null);}} product={optionProduct} onAddToCart={handleAddToCart}/>
+      <CartToast isOpen={toastOpen} onClose={function(){setToastOpen(false);}} onGoToCart={function(){setToastOpen(false);openList("cart");}}/>
+      <CustomerGamePopup isOpen={gamePopupOpen} onClose={function(){setGamePopupOpen(false);}} gameState={gameState} countdown={countdown} onTap={onTap} tapResult={tapResult} rank={rank} onAddToCart={handleAddToCart}/>
       <WinnerResultPopup isOpen={showWinnerResult} onClose={onCloseWinnerResult} rank={1} nickname="시나몬로올"/>
     </div>
   );
@@ -797,37 +812,32 @@ export default function App() {
   const [winnersCount,setWinnersCount]=useState(0);
   const [tapResult,setTapResult]=useState(null);
   const [rank,setRank]=useState(null);
-  const [gameConfig,setGameConfig]=useState({people:1,price:0,type:"firstcome"});
+  const [gameConfig,setGameConfig]=useState({people:1,price:0,type:"firstcome",target:"모든 이용자"});
   const [participants,setParticipants]=useState(0);
   const [showWinnerResult,setShowWinnerResult]=useState(false);
   const [showSellerResult,setShowSellerResult]=useState(false);
   const [cartSuccessProduct,setCartSuccessProduct]=useState(null);
   const [showCartFromSuccess,setShowCartFromSuccess]=useState(false);
   const timerRef=useRef(null);
-  const totalSlots=gameConfig.people;
+  var totalSlots=gameConfig.people;
 
-  const toggleUp=p=>setUpProduct(prev=>prev?.id===p.id?null:p);
-  const addToCart=(product,qty)=>{ setCartItems(prev=>prev.find(i=>i.id===product.id)?prev:[...prev,product]); setCartQty(prev=>({...prev,[product.id]:(prev[product.id]||0)+qty})); };
-  const changeQty=(id,delta)=>setCartQty(prev=>({...prev,[id]:Math.max(1,(prev[id]||1)+delta)}));
-  const removeCart=id=>{ setCartItems(prev=>prev.filter(i=>i.id!==id)); setCartQty(prev=>{const n={...prev};delete n[id];return n;}); };
-  const handleReady=(people,price,type="firstcome")=>{ setGameConfig({people:people||1,price:price||0,type}); setParticipants(0); setGameState("ready"); };
-  const handleStartCountdown=()=>{
-    setGameState("countdown"); setCountdown(3); setWinnersCount(0); setTapResult(null); setRank(null);
-    let c=3;
-    timerRef.current=setInterval(()=>{ c--; if(c>0){setCountdown(c);}else{clearInterval(timerRef.current);setGameState("open");setCountdown(0);setTimeout(()=>setGameState(gs=>gs==="open"?"done":gs),10000);} },1000);
+  var toggleUp=function(p){setUpProduct(function(prev){return prev&&prev.id===p.id?null:p;});};
+  var addToCart=function(product,qty){setCartItems(function(prev){return prev.find(function(i){return i.id===product.id;})?prev:[...prev,product];});setCartQty(function(prev){return {...prev,[product.id]:(prev[product.id]||0)+qty};});};
+  var changeQty=function(id,delta){setCartQty(function(prev){return {...prev,[id]:Math.max(1,(prev[id]||1)+delta)};});};
+  var removeCart=function(id){setCartItems(function(prev){return prev.filter(function(i){return i.id!==id;});});setCartQty(function(prev){var n={...prev};delete n[id];return n;});};
+  var handleReady=function(people,price,type,target){setGameConfig({people:people||1,price:price||0,type:type||"firstcome",target:target||"모든 이용자"});setParticipants(0);setGameState("ready");};
+  var handleStartCountdown=function(){
+    setGameState("countdown");setCountdown(3);setWinnersCount(0);setTapResult(null);setRank(null);
+    var c=3;
+    timerRef.current=setInterval(function(){ c--; if(c>0){setCountdown(c);}else{clearInterval(timerRef.current);setGameState("open");setCountdown(0);setTimeout(function(){setGameState(function(gs){return gs==="open"?"done":gs;});},10000);} },1000);
   };
-  const handleTap=()=>{
+  var handleTap=function(){
     if(tapResult) return;
-    setWinnersCount(prev=>{const next=prev+1;if(next<=totalSlots){setTapResult("winner");setRank(next);if(next>=totalSlots)setTimeout(()=>setGameState("done"),600);return next;}else{setTapResult("loser");return prev;}});
+    setWinnersCount(function(prev){var next=prev+1;if(next<=totalSlots){setTapResult("winner");setRank(next);if(next>=totalSlots)setTimeout(function(){setGameState("done");},600);return next;}else{setTapResult("loser");return prev;}});
   };
-  const handleEndGame=()=>{
-    clearInterval(timerRef.current);
-    setGameState("done");
-    setShowSellerResult(true);
-    setShowWinnerResult(true);
-  };
-  const handleReset=()=>{ clearInterval(timerRef.current); setGameState("idle"); setCountdown(3); setWinnersCount(0); setTapResult(null); setRank(null); setParticipants(0); setShowSellerResult(false); setShowWinnerResult(false); };
-  useEffect(()=>()=>clearInterval(timerRef.current),[]);
+  var handleEndGame=function(){ clearInterval(timerRef.current); setGameState("done"); setShowSellerResult(true); setShowWinnerResult(true); };
+  var handleReset=function(){ clearInterval(timerRef.current); setGameState("idle"); setCountdown(3); setWinnersCount(0); setTapResult(null); setRank(null); setParticipants(0); setShowSellerResult(false); setShowWinnerResult(false); };
+  useEffect(function(){return function(){clearInterval(timerRef.current);};},[]);
 
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(135deg,#e2e8f0 0%,#cbd5e1 100%)",padding:"24px 16px",gap:20}}>
@@ -838,21 +848,21 @@ export default function App() {
       <div style={{display:"flex",gap:24,alignItems:"flex-start",flexWrap:"wrap",justifyContent:"center"}}>
         <PhoneMockup label="🛍️ 고객 뷰" labelColor="#f43f5e">
           <div style={{position:"relative",height:"100%"}}>
-          <CustomerLiveView
-            isLive={phase==="live"} upProduct={upProduct} products={products}
-            cartItems={cartItems} cartQty={cartQty} onAddToCart={addToCart} onQtyChange={changeQty} onCartRemove={removeCart}
-            gameState={gameState} countdown={countdown} winnersCount={winnersCount} totalSlots={totalSlots}
-            onTap={handleTap} tapResult={tapResult} rank={rank}
-            gameConfig={gameConfig} participants={participants} onParticipate={()=>setParticipants(p=>p+1)}
-            showWinnerResult={showWinnerResult} onCloseWinnerResult={()=>setShowWinnerResult(false)}
-            forceCartOpen={showCartFromSuccess} onForceCartClose={()=>setShowCartFromSuccess(false)}
-          />
-          <CartSuccessPopup isOpen={!!cartSuccessProduct} onClose={()=>setCartSuccessProduct(null)} product={cartSuccessProduct} onGoToCart={()=>{ setCartSuccessProduct(null); setShowCartFromSuccess(true); }}/>
+            <CustomerLiveView
+              isLive={phase==="live"} upProduct={upProduct} products={products}
+              cartItems={cartItems} cartQty={cartQty} onAddToCart={addToCart} onQtyChange={changeQty} onCartRemove={removeCart}
+              gameState={gameState} countdown={countdown} winnersCount={winnersCount} totalSlots={totalSlots}
+              onTap={handleTap} tapResult={tapResult} rank={rank}
+              gameConfig={gameConfig} participants={participants} onParticipate={function(){setParticipants(function(p){return p+1;});}}
+              showWinnerResult={showWinnerResult} onCloseWinnerResult={function(){setShowWinnerResult(false);}}
+              forceCartOpen={showCartFromSuccess} onForceCartClose={function(){setShowCartFromSuccess(false);}}
+            />
+            <CartSuccessPopup isOpen={!!cartSuccessProduct} onClose={function(){setCartSuccessProduct(null);}} product={cartSuccessProduct} onGoToCart={function(){setCartSuccessProduct(null);setShowCartFromSuccess(true);}}/>
           </div>
         </PhoneMockup>
         <PhoneMockup label="📹 셀러 뷰" labelColor="#0f172a">
           {phase==="setup"
-            ? <SellerSetupView onStart={()=>setPhase("live")} products={products}/>
+            ? <SellerSetupView onStart={function(){setPhase("live");}} products={products}/>
             : <div style={{position:"relative",height:"100%"}}>
                 <SellerLiveView
                   upProduct={upProduct} onToggleUp={toggleUp} products={products}
@@ -862,13 +872,10 @@ export default function App() {
                 />
                 <SellerGameResultPopup
                   isOpen={showSellerResult}
-                  onClose={()=>setShowSellerResult(false)}
+                  onClose={function(){setShowSellerResult(false);}}
                   winners={MOCK_WINNERS}
                   onReset={handleReset}
-                  onCartSuccess={(product)=>{
-                    addToCart({...product, id:Date.now()}, 1);
-                    setCartSuccessProduct(product);
-                  }}
+                  onCartSuccess={function(product){addToCart({...product,id:Date.now()},1);setCartSuccessProduct(product);}}
                 />
               </div>
           }
@@ -876,19 +883,16 @@ export default function App() {
       </div>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",maxWidth:700}}>
         {[
-          phase==="setup"
-            ?{icon:"①",text:"셀러: 방송하기 버튼으로 라이브 시작",color:"#0f172a"}
-            :{icon:"①",text:"셀러: 게임 버튼 → 선착순 설정 → 카운트다운",color:"#0f172a"},
-          {icon:"②",text:"고객: '저요!' 버튼 참여 → 터치! 버튼으로 선착",color:"#6366f1"},
-          {icon:"③",text:"셀러 종료 → 결과 팝업 + 고객 당첨 팝업 동시 표시",color:"#f43f5e"},
-        ].map(({icon,text,color})=>(
-          <div key={icon} style={{background:"white",borderRadius:12,padding:"8px 14px",display:"flex",alignItems:"center",gap:8,boxShadow:"0 2px 8px rgba(0,0,0,0.08)"}}>
-            <span style={{width:22,height:22,borderRadius:9999,background:color,color:"white",fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</span>
-            <span style={{fontSize:11,fontWeight:700,color:"#475569"}}>{text}</span>
+          phase==="setup"?{icon:"①",text:"셀러: 방송하기 버튼으로 라이브 시작",color:"#0f172a"}:{icon:"①",text:"셀러: 게임 버튼 → 선착순/추첨 설정",color:"#0f172a"},
+          {icon:"②",text:"고객: 참여 버튼 → 선착/추첨 도전",color:"#6366f1"},
+          {icon:"③",text:"셀러 종료 → 결과 팝업 + 고객 당첨 팝업",color:"#f43f5e"},
+        ].map(function(item){return(
+          <div key={item.icon} style={{background:"white",borderRadius:12,padding:"8px 14px",display:"flex",alignItems:"center",gap:8,boxShadow:"0 2px 8px rgba(0,0,0,0.08)"}}>
+            <span style={{width:22,height:22,borderRadius:9999,background:item.color,color:"white",fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{item.icon}</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#475569"}}>{item.text}</span>
           </div>
-        ))}
+        );})}
       </div>
     </div>
   );
 }
- 
