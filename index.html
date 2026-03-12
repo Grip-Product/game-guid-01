@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>한정판매 라이브</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; }
+  .slide-up { animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  input:focus { outline: none; border-color: #ec4899; }
+  select:focus { outline: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef } = React;
+
+// Lucide icons shim
+const Icon = ({ name, size = 16, className = "", strokeWidth = 2 }) => {
+  const icons = {
+    X: `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
+    Heart: `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>`,
+    Share2: `<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>`,
+    Gift: `<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>`,
+    ShoppingBag: `<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>`,
+    Plus: `<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>`,
+    Minus: `<line x1="5" y1="12" x2="19" y2="12"/>`,
+    Ticket: `<path d="M15 5v2"/><path d="M15 11v2"/><path d="M15 17v2"/><path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/>`,
+    RotateCw: `<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>`,
+    MoreVertical: `<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>`,
+    Maximize2: `<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>`,
+    Check: `<polyline points="20 6 9 13 4 10"/>`,
+    Search: `<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`,
+    ChevronLeft: `<polyline points="15 18 9 12 15 6"/>`,
+    ChevronRight: `<polyline points="9 18 15 12 9 6"/>`,
+    Bell: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
+    Store: `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`,
+    Eye: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{__html: icons[name] || ''}}/>
+  );
+};
+
+const ProductImg = ({ size = "md", badge }) => {
+  const cfg = { sm: ["w-7 h-7", 12], md: ["w-10 h-10", 16], lg: ["w-12 h-12", 18], xl: ["w-14 h-14", 20] };
+  const [dim, icon] = cfg[size] || cfg.md;
+  return (
+    <div className={`${dim} rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 relative`} style={{overflow:'visible'}}>
+      {badge && <span style={{fontSize:"5px",lineHeight:"1",padding:"1px 2px",position:'absolute',top:'-4px',left:'-4px',zIndex:10,background:'#2563eb',color:'white',fontWeight:'bold',borderRadius:'3px',whiteSpace:'nowrap'}}>{badge}</span>}
+      <Icon name="Store" size={icon} className="text-blue-400"/>
+    </div>
+  );
+};
+
+const SlideToPayButton = ({ onComplete }) => {
+  const [dragging, setDragging] = useState(false);
+  const [pos, setPos] = useState(0);
+  const startX = useRef(0);
+  const THUMB = 44, TRACK_W = 220, MAX = TRACK_W - THUMB;
+  const onStart = (clientX) => { setDragging(true); startX.current = clientX - pos; };
+  const onMove = (clientX) => {
+    if (!dragging) return;
+    const next = Math.max(0, Math.min(MAX, clientX - startX.current));
+    setPos(next);
+    if (next >= MAX - 4) { setDragging(false); setPos(MAX); setTimeout(() => { setPos(0); onComplete(); }, 200); }
+  };
+  const onEnd = () => { if (dragging) { setDragging(false); setPos(0); } };
+  return (
+    <div className="relative flex items-center rounded-xl overflow-hidden select-none"
+      style={{width:TRACK_W, height:48, background:"#1a1a2e"}}
+      onMouseMove={e=>onMove(e.clientX)} onMouseUp={onEnd} onMouseLeave={onEnd}
+      onTouchMove={e=>onMove(e.touches[0].clientX)} onTouchEnd={onEnd}>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{gap:'6px'}}>
+        <span style={{fontSize:"11px",fontWeight:'bold',color:"#a78bfa",marginLeft:40}}>G</span>
+        <span style={{fontSize:"11px",fontWeight:'bold',color:'white'}}>슬라이드 GripPay 결제</span>
+      </div>
+      <div className="absolute top-1 bottom-1 rounded-lg flex items-center justify-center z-10"
+        style={{width:THUMB, left:4+pos, background:"linear-gradient(135deg,#7c3aed,#4f46e5)", transition: dragging?"none":"left 0.2s", cursor:'grab'}}
+        onMouseDown={e=>onStart(e.clientX)} onTouchStart={e=>onStart(e.touches[0].clientX)}>
+        <Icon name="ChevronRight" size={18} className="text-white"/>
+      </div>
+    </div>
+  );
+};
+
+const PayCompleteModal = ({ orders, onClose }) => {
+  const total = orders.reduce((s,o)=>s+o.totalPrice,0);
+  const count = orders.reduce((s,o)=>s+o.quantity,0);
+  const first = orders[0] || null;
+  return (
+    <div className="w-full">
+      <div className="bg-white rounded-t-3xl px-5 pt-6 pb-5 flex flex-col items-center shadow-2xl">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{background:"linear-gradient(135deg,#7c3aed,#4f46e5)"}}>
+          <Icon name="Check" size={28} className="text-white" strokeWidth={3}/>
+        </div>
+        <h2 style={{fontSize:'15px',fontWeight:900,color:'#111',marginBottom:'4px'}}>결제가 완료되었습니다!</h2>
+        <p style={{fontSize:'10px',color:'#9ca3af',marginBottom:'16px'}}>GripPay로 빠르고 간편하게 구매했어요.</p>
+        {first ? (
+          <div className="w-full bg-gray-50 rounded-xl p-3 flex items-center gap-3 mb-4">
+            <ProductImg size="md"/>
+            <div className="flex-grow" style={{minWidth:0}}>
+              <p style={{fontSize:'10px',fontWeight:'bold',color:'#374151'}} className="truncate">{orders.length===1 ? first.productName : `${first.productName} 외 ${orders.length-1}개`}</p>
+              <p style={{fontSize:'12px',fontWeight:900,color:'#111',marginTop:'2px'}}>{total.toLocaleString()}원 ({count}개)</p>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full bg-gray-50 rounded-xl p-3 flex items-center justify-center mb-4">
+            <p style={{fontSize:'10px',color:'#9ca3af'}}>결제가 완료되었습니다.</p>
+          </div>
+        )}
+        <button onClick={onClose} className="w-full py-3 rounded-xl font-bold text-white text-sm" style={{background:"linear-gradient(135deg,#7c3aed,#4f46e5)"}}>확인</button>
+      </div>
+    </div>
+  );
+};
+
+const BroadcastSimulation = () => {
+  const [activeProductId, setActiveProductId] = useState(1);
+  const [currentStock] = useState(100);
+  const [productStatuses, setProductStatuses] = useState({1:"판매중",2:"판매예정",3:"판매예정",4:"판매예정",5:"판매예정"});
+  const [storeOnProducts, setStoreOnProducts] = useState({1:false,2:false,3:false,4:false,5:false});
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isProductListOpen, setIsProductListOpen] = useState(false);
+  const [customerTab, setCustomerTab] = useState("products");
+  const [quantity, setQuantity] = useState(1);
+  const [orders, setOrders] = useState([]);
+  const [showOrderToast, setShowOrderToast] = useState(false);
+  const [showPayComplete, setShowPayComplete] = useState(false);
+  const [showCheckoutPage, setShowCheckoutPage] = useState(false);
+  const [detailProduct, setDetailProduct] = useState(null);
+  const [isSellerManagementOpen, setIsSellerManagementOpen] = useState(false);
+
+  const products = [
+    {id:1,name:"일반상품 1",price:15000,stock:100},
+    {id:2,name:"일반상품 2",price:22000,stock:20},
+    {id:3,name:"일반상품 3",price:23000,stock:15},
+    {id:4,name:"일반상품 4",price:25000,stock:10},
+    {id:5,name:"일반상품 5",price:28000,stock:8},
+  ];
+
+  const activeProduct = products.find(p=>p.id===activeProductId);
+  const totalPrice = activeProduct ? activeProduct.price * quantity : 0;
+
+  const handlePurchaseByCustomer = (id) => {
+    const prod = products.find(p=>p.id===id);
+    setActiveProductId(id); setQuantity(1);
+    setIsProductListOpen(false); setIsPopupOpen(true);
+  };
+
+  const handleOrder = () => {
+    if (!activeProduct) return;
+    const newOrder = {id:Date.now(),productId:activeProduct.id,productName:activeProduct.name,quantity,price:activeProduct.price,totalPrice:activeProduct.price*quantity,orderedAt:new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"}),badge:"한정판매"};
+    setOrders(prev=>[newOrder,...prev]);
+    setIsPopupOpen(false); setShowOrderToast(true);
+    setTimeout(()=>{setShowOrderToast(false);setCustomerTab("order");setIsProductListOpen(true);},800);
+  };
+
+  const updateOrderQty = (id,d) => setOrders(prev=>prev.map(o=>o.id===id?{...o,quantity:Math.max(1,o.quantity+d),totalPrice:o.price*Math.max(1,o.quantity+d)}:o));
+  const removeOrder = (id) => setOrders(prev=>prev.filter(o=>o.id!==id));
+  const handleUp = (id) => {
+    if (activeProductId===id){setActiveProductId(null);return;}
+    setActiveProductId(id); setQuantity(1);
+  };
+  const updateStatus = (id,s) => setProductStatuses(prev=>({...prev,[id]:s}));
+  const toggleStoreOn = (id) => setStoreOnProducts(prev=>({...prev,[id]:!prev[id]}));
+  const visibleCustomerProducts = products.filter(p=>storeOnProducts[p.id]);
+  const orderSubtotal = orders.reduce((s,o)=>s+o.totalPrice,0);
+  const couponDiscount = 2000;
+  const shippingFee = orders.length>0?3000:0;
+  const orderTotal = orderSubtotal - couponDiscount + shippingFee;
+
+  const mobileStyle = {width:280,height:580,position:'relative',background:'#000',borderRadius:'44px',boxShadow:'0 25px 50px rgba(0,0,0,0.5)',overflow:'hidden',border:'12px solid #1f2937'};
+
+  return (
+    <div style={{padding:'16px',background:'#f3f4f6',minHeight:'calc(100vh - 60px)'}}>
+      <div style={{textAlign:'center',marginBottom:'16px'}}>
+        <h2 style={{fontSize:'18px',fontWeight:'bold',color:'#1f2937',marginBottom:'4px'}}>📺 라이브 방송 시뮬레이션</h2>
+        <p style={{color:'#6b7280',fontSize:'12px'}}>고객 화면과 셀러 화면을 동시에 확인</p>
+      </div>
+      <div style={{display:'flex',gap:'24px',justifyContent:'center',alignItems:'flex-start',flexWrap:'wrap'}}>
+
+        {/* 고객뷰 */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+          <div style={{marginBottom:'8px',display:'inline-flex',alignItems:'center',gap:'6px',background:'#dcfce7',color:'#15803d',padding:'4px 12px',borderRadius:'999px',fontSize:'12px',fontWeight:'bold'}}>
+            <Icon name="Eye" size={12}/> 고객뷰
+          </div>
+          <div style={mobileStyle}>
+            {/* Status bar */}
+            <div style={{position:'absolute',top:0,width:'100%',height:'32px',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 20px',zIndex:20,color:'white',fontSize:'10px'}}>
+              <span>8:06</span><div style={{opacity:0.5}}>|||</div>
+            </div>
+            {/* BG */}
+            <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,#581c87,#111827,#000)'}}>
+              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'60px',opacity:0.3}}>🎪</div>
+            </div>
+            {/* Host info */}
+            <div style={{position:'absolute',top:'36px',left:0,width:'100%',padding:'0 12px',zIndex:10,display:'flex',justifyContent:'space-between',alignItems:'flex-start',color:'white'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                <div style={{width:32,height:32,borderRadius:'50%',border:'2px solid #ec4899',background:'linear-gradient(135deg,#f472b6,#ef4444)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px'}}>👩</div>
+                <div><div style={{fontWeight:'bold',fontSize:'11px'}}>꽃꽃언니 🎀</div><div style={{fontSize:'9px',opacity:0.8}}>❤️ 5만  🔥 723</div></div>
+              </div>
+              <div style={{display:'flex',gap:'8px'}}><Icon name="Share2" size={14}/><Icon name="X" size={14}/></div>
+            </div>
+
+            {/* Order toast */}
+            {showOrderToast && (
+              <div style={{position:'absolute',bottom:'80px',left:0,width:'100%',padding:'0 12px',zIndex:20}}>
+                <div style={{background:'white',borderRadius:'12px',boxShadow:'0 10px 25px rgba(0,0,0,0.15)',border:'1px solid #f3f4f6',padding:'10px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                    <div style={{width:28,height:28,background:'#e0f2fe',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="Store" size={13} className="text-blue-400"/></div>
+                    <p style={{fontSize:'10px',color:'#374151'}}>라이브 주문서에 상품이 담겼습니다.</p>
+                  </div>
+                  <button onClick={()=>{setShowOrderToast(false);setCustomerTab("order");setIsProductListOpen(true);}}
+                    style={{border:'1px dashed #f472b6',color:'#ec4899',fontSize:'9px',fontWeight:'bold',padding:'4px 8px',borderRadius:'8px',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'2px',background:'none',cursor:'pointer'}}>
+                    바로가기 <Icon name="ChevronRight" size={10}/>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Active product card */}
+            {activeProduct && (() => {
+              const st = productStatuses[activeProduct.id];
+              return (
+                <div style={{position:'absolute',bottom:'80px',left:0,width:'100%',padding:'0 12px',zIndex:10}}>
+                  <div style={{position:'relative',background:'white',borderRadius:'8px',display:'flex',alignItems:'stretch',boxShadow:'0 4px 12px rgba(0,0,0,0.15)',overflow:'hidden',height:52}}>
+                    <div style={{position:'absolute',top:0,left:0,background:'#2563eb',color:'white',fontWeight:'bold',borderRadius:'0 0 4px 0',zIndex:10,fontSize:'5px',lineHeight:1,padding:'1px 2px',whiteSpace:'nowrap'}}>한정상품</div>
+                    <div style={{width:48,background:'#e0f2fe',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="Store" size={18} className="text-blue-400"/></div>
+                    <div style={{flexGrow:1,padding:'0 8px',display:'flex',flexDirection:'column',justifyContent:'center',minWidth:0}}>
+                      <h3 style={{fontSize:'10px',fontWeight:'bold',color:'#1f2937'}} className="truncate">{activeProduct.name}</h3>
+                      {st==="판매예정" ? <span style={{fontSize:'11px',fontWeight:'bold',color:'transparent'}}>-</span> : <span style={{fontSize:'11px',fontWeight:'bold',color:'#111'}}>{activeProduct.price.toLocaleString()}원</span>}
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',paddingRight:8}}>
+                      {st==="판매예정" && <button disabled style={{background:'#d1d5db',color:'white',fontWeight:'bold',padding:'6px 10px',borderRadius:4,fontSize:'9px',border:'none',cursor:'not-allowed'}}>예정</button>}
+                      {st==="판매중" && <button onClick={()=>setIsPopupOpen(true)} style={{background:'#ef4444',color:'white',fontWeight:'bold',padding:'6px 10px',borderRadius:4,fontSize:'10px',border:'none',cursor:'pointer'}}>주문</button>}
+                      {st==="품절" && <button disabled style={{background:'#9ca3af',color:'white',fontWeight:'bold',padding:'6px 10px',borderRadius:4,fontSize:'9px',border:'none',cursor:'not-allowed'}}>품절</button>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Bottom bar */}
+            <div style={{position:'absolute',bottom:0,width:'100%',padding:'8px 8px 16px',zIndex:10,display:'flex',alignItems:'flex-end',gap:'6px',color:'white',background:'linear-gradient(to top,rgba(0,0,0,0.7),transparent)'}}>
+              <div onClick={()=>setIsProductListOpen(true)} style={{position:'relative',width:36,height:36,background:'rgba(255,255,255,0.2)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',border:'1px solid rgba(255,255,255,0.3)'}}>
+                <Icon name="ShoppingBag" size={16}/>
+                <span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',fontSize:'8px',width:14,height:14,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold'}}>{visibleCustomerProducts.length}</span>
+              </div>
+              <div style={{flexGrow:1,background:'rgba(0,0,0,0.4)',color:'rgba(255,255,255,0.7)',fontSize:'10px',borderRadius:999,padding:'8px 12px',border:'1px solid rgba(255,255,255,0.2)'}}>메시지 입력</div>
+              <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                {[['Gift','선물'],['Ticket','쿠폰'],['Heart','좋아요']].map(([n,l])=>(
+                  <div key={n} style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                    <Icon name={n} size={16}/><span style={{fontSize:'8px'}}>{l}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Product list sheet */}
+            {isProductListOpen && (
+              <>
+                <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.5)',zIndex:40}} onClick={()=>setIsProductListOpen(false)}/>
+                <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:50,background:'white',borderRadius:'16px 16px 0 0',display:'flex',flexDirection:'column',height:'82%'}}>
+                  <div style={{display:'flex',alignItems:'center',borderBottom:'1px solid #e5e7eb',flexShrink:0}}>
+                    {[["products",`판매상품 ${visibleCustomerProducts.length}`],["order",`라이브 주문서 ${orders.length}`]].map(([tab,label])=>(
+                      <button key={tab} onClick={()=>setCustomerTab(tab)} style={{flex:1,padding:'10px 0',fontSize:'11px',fontWeight:'bold',position:'relative',color:customerTab===tab?'#111':'#9ca3af',background:'none',border:'none',cursor:'pointer'}}>
+                        {label}
+                        {customerTab===tab && <div style={{position:'absolute',bottom:0,left:0,width:'100%',height:2,background:'#111'}}/>}
+                      </button>
+                    ))}
+                    <button onClick={()=>setIsProductListOpen(false)} style={{padding:'0 12px',color:'#9ca3af',background:'none',border:'none',cursor:'pointer'}}><Icon name="X" size={15}/></button>
+                  </div>
+
+                  {customerTab==="products" ? (
+                    <div style={{flexGrow:1,overflowY:'auto',padding:'12px',display:'flex',flexDirection:'column',gap:'8px'}}>
+                      {visibleCustomerProducts.length>0 ? visibleCustomerProducts.map(prod=>(
+                        <div key={prod.id} style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px',borderRadius:'8px',border:'1px solid #f3f4f6'}}>
+                          <div onClick={()=>setDetailProduct(prod)} style={{cursor:'pointer'}}><ProductImg size="md"/></div>
+                          <div style={{flexGrow:1,minWidth:0,cursor:'pointer'}} onClick={()=>setDetailProduct(prod)}>
+                            <h4 style={{fontWeight:'bold',fontSize:'10px',color:'#1f2937'}} className="truncate">{prod.name}</h4>
+                            <p style={{fontWeight:900,fontSize:'11px'}}>{prod.price.toLocaleString()}원</p>
+                          </div>
+                          <button onClick={()=>handlePurchaseByCustomer(prod.id)} style={{display:'flex',alignItems:'center',gap:'4px',background:'#ec4899',color:'white',fontSize:'9px',fontWeight:'bold',padding:'6px 8px',borderRadius:'6px',border:'none',cursor:'pointer'}}>
+                            <Icon name="ShoppingBag" size={10}/> 구매
+                          </button>
+                        </div>
+                      )) : (
+                        <div style={{textAlign:'center',padding:'40px 0',color:'#9ca3af'}}>
+                          <Icon name="ShoppingBag" size={32} style={{margin:'0 auto 8px',opacity:0.3}}/>
+                          <p style={{fontSize:'10px'}}>등록된 상품 없음</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{display:'flex',flexDirection:'column',flexGrow:1,overflow:'hidden'}}>
+                      <div style={{padding:'8px 12px',flexShrink:0}}>
+                        <p style={{fontSize:'10px',color:'#6b7280',textAlign:'center'}}>주문서에 담긴 상품을 빠르게 구매하세요!</p>
+                      </div>
+                      <div style={{flexGrow:1,overflowY:'auto',padding:'0 12px',display:'flex',flexDirection:'column',gap:'8px',paddingBottom:'4px'}}>
+                        {orders.length===0 ? (
+                          <div style={{textAlign:'center',padding:'40px 0',color:'#9ca3af'}}>
+                            <Icon name="ShoppingBag" size={32} style={{margin:'0 auto 8px',opacity:0.3}}/>
+                            <p style={{fontSize:'10px'}}>주문 내역 없음</p>
+                          </div>
+                        ) : orders.map(order=>(
+                          <div key={order.id} style={{background:'white',border:'1px solid #f3f4f6',borderRadius:'12px',padding:'10px',position:'relative'}}>
+                            <button onClick={()=>removeOrder(order.id)} style={{position:'absolute',top:8,right:8,color:'#d1d5db',background:'none',border:'none',cursor:'pointer'}}><Icon name="X" size={12}/></button>
+                            <div style={{display:'flex',gap:'8px',alignItems:'flex-start'}}>
+                              <ProductImg size="lg" badge={order.badge}/>
+                              <div style={{flexGrow:1,minWidth:0,paddingRight:16}}>
+                                <p style={{fontSize:'10px',fontWeight:'bold',color:'#1f2937',lineHeight:1.3}}>{order.productName}</p>
+                                <span style={{fontSize:'11px',fontWeight:900,color:'#111',marginTop:4,display:'block'}}>{order.price.toLocaleString()}원</span>
+                              </div>
+                            </div>
+                            <div style={{display:'flex',justifyContent:'flex-end',marginTop:6}}>
+                              <div style={{display:'flex',alignItems:'center',border:'1px solid #e5e7eb',borderRadius:'8px',overflow:'hidden'}}>
+                                <button onClick={()=>updateOrderQty(order.id,-1)} style={{padding:'4px 8px',color:'#9ca3af',background:'none',border:'none',cursor:'pointer'}}><Icon name="Minus" size={10}/></button>
+                                <span style={{padding:'0 8px',fontSize:'11px',fontWeight:'bold',color:'#1f2937'}}>{order.quantity}</span>
+                                <button onClick={()=>updateOrderQty(order.id,1)} style={{padding:'4px 8px',color:'#374151',background:'none',border:'none',cursor:'pointer'}}><Icon name="Plus" size={10}/></button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {orders.length>0 && (
+                        <div style={{flexShrink:0,borderTop:'1px solid #e5e7eb',background:'white',padding:'8px 12px',display:'flex',flexDirection:'column',gap:'4px'}}>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'10px'}}><span style={{color:'#6b7280'}}>총 주문금액</span><span style={{fontWeight:'bold'}}>{orderSubtotal.toLocaleString()}원</span></div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'10px'}}>
+                            <span style={{color:'#6b7280',display:'flex',alignItems:'center',gap:'4px'}}>쿠폰 할인 <span style={{background:'#f3f4f6',color:'#6b7280',fontSize:'7px',padding:'1px 4px',borderRadius:'3px'}}>쿠폰 1장 적용</span></span>
+                            <span style={{fontWeight:'bold',color:'#3b82f6'}}>-{couponDiscount.toLocaleString()}원</span>
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'10px'}}><span style={{color:'#6b7280'}}>배송비</span><span style={{fontWeight:'bold'}}>{shippingFee.toLocaleString()}원</span></div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'10px',paddingTop:4,borderTop:'1px solid #e5e7eb'}}>
+                            <span style={{fontWeight:'bold',color:'#1f2937'}}>총 결제금액</span>
+                            <span style={{fontWeight:900,color:'#ef4444',fontSize:'12px'}}>{orderTotal.toLocaleString()}원</span>
+                          </div>
+                          <button onClick={()=>{setIsProductListOpen(false);setShowCheckoutPage(true);}} style={{width:'100%',marginTop:4,background:'#ec4899',color:'white',fontWeight:'bold',padding:'10px',borderRadius:'12px',fontSize:'11px',border:'none',cursor:'pointer'}}>
+                            {orders.length}개 {orderTotal.toLocaleString()}원 결제하기
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Detail sheet */}
+            {detailProduct && (
+              <>
+                <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.5)',zIndex:50}} onClick={()=>setDetailProduct(null)}/>
+                <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:50,background:'white',borderRadius:'16px 16px 0 0',display:'flex',flexDirection:'column',maxHeight:'85%'}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px',borderBottom:'1px solid #e5e7eb',flexShrink:0}}>
+                    <h2 style={{fontWeight:'bold',fontSize:'12px'}}>상품 상세</h2>
+                    <button onClick={()=>setDetailProduct(null)} style={{color:'#9ca3af',background:'none',border:'none',cursor:'pointer'}}><Icon name="X" size={16}/></button>
+                  </div>
+                  <div style={{overflowY:'auto',flexGrow:1,padding:'12px'}}>
+                    <div style={{width:'100%',height:64,background:'#e0f2fe',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}><Icon name="Store" size={28} className="text-blue-300"/></div>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                      <h3 style={{fontWeight:'bold',fontSize:'11px',color:'#111'}}>{detailProduct.name}</h3>
+                      <span style={{fontWeight:900,fontSize:'13px',color:'#111'}}>{detailProduct.price.toLocaleString()}원</span>
+                    </div>
+                    <div style={{background:'#f9fafb',borderRadius:'12px',padding:'10px',display:'flex',flexDirection:'column',gap:'4px',fontSize:'10px'}}>
+                      {[['배송방법','일반배송'],['배송비','3,000원'],['재고',`${detailProduct.stock}개`]].map(([k,v])=>(
+                        <div key={k} style={{display:'flex',justifyContent:'space-between'}}><span style={{color:'#9ca3af'}}>{k}</span><span style={{fontWeight:500}}>{v}</span></div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{padding:'12px',borderTop:'1px solid #e5e7eb',flexShrink:0}}>
+                    <button onClick={()=>{setDetailProduct(null);handlePurchaseByCustomer(detailProduct.id);}} style={{width:'100%',padding:'10px',borderRadius:'12px',background:'#ec4899',color:'white',fontSize:'11px',fontWeight:'bold',border:'none',cursor:'pointer'}}>구매하기</button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Purchase popup */}
+            {isPopupOpen && activeProduct && (
+              <>
+                <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.5)',zIndex:40}} onClick={()=>setIsPopupOpen(false)}/>
+                <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:50,background:'white',borderRadius:'16px 16px 0 0',display:'flex',flexDirection:'column',maxHeight:'60%'}}>
+                  <div style={{padding:'12px',overflowY:'auto',flexGrow:1}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+                      <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                        <ProductImg size="md"/>
+                        <div>
+                          <h2 style={{fontWeight:'bold',fontSize:'12px'}}>{activeProduct.name}</h2>
+                          <div style={{fontWeight:'bold',fontSize:'14px'}}>{activeProduct.price.toLocaleString()}원</div>
+                        </div>
+                      </div>
+                      <button onClick={()=>setIsPopupOpen(false)} style={{color:'#9ca3af',background:'none',border:'none',cursor:'pointer'}}><Icon name="X" size={16}/></button>
+                    </div>
+                    <div style={{background:'#f9fafb',borderRadius:'8px',padding:'10px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <span style={{fontSize:'10px',color:'#4b5563'}}>{activeProduct.name}</span>
+                      <div style={{display:'flex',alignItems:'center',gap:'4px',border:'1px solid #e5e7eb',borderRadius:'6px',background:'white',fontSize:'12px'}}>
+                        <button onClick={()=>setQuantity(Math.max(1,quantity-1))} style={{padding:'4px 8px',color:'#9ca3af',background:'none',border:'none',cursor:'pointer'}}><Icon name="Minus" size={12}/></button>
+                        <span style={{padding:'0 6px',fontWeight:'bold',fontSize:'11px'}}>{quantity}</span>
+                        <button onClick={()=>setQuantity(quantity+1)} style={{padding:'4px 8px',color:'#374151',background:'none',border:'none',cursor:'pointer'}}><Icon name="Plus" size={12}/></button>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:12}}>
+                      <span style={{fontWeight:'bold',fontSize:'10px',color:'#374151'}}>총 금액</span>
+                      <span style={{fontSize:'16px',fontWeight:900}}>{totalPrice.toLocaleString()}원</span>
+                    </div>
+                    <button onClick={handleOrder} style={{width:'100%',background:'#ec4899',color:'white',fontWeight:'bold',padding:'10px',borderRadius:'12px',fontSize:'12px',border:'none',cursor:'pointer'}}>주문하기</button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Checkout page */}
+            {showCheckoutPage && (
+              <div style={{position:'absolute',inset:0,zIndex:50,background:'white',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                <div style={{display:'flex',alignItems:'center',padding:'12px 16px',borderBottom:'1px solid #e5e7eb',flexShrink:0}}>
+                  <button onClick={()=>setShowCheckoutPage(false)} style={{marginRight:12,color:'#6b7280',background:'none',border:'none',cursor:'pointer'}}><Icon name="ChevronLeft" size={18}/></button>
+                  <h2 style={{fontWeight:'bold',fontSize:'14px',flexGrow:1,textAlign:'center'}}>결제하기</h2>
+                  <div style={{width:24}}/>
+                </div>
+                <div style={{flexGrow:1,overflowY:'auto'}}>
+                  <div style={{padding:'16px'}}>
+                    <h3 style={{fontSize:'11px',fontWeight:900,color:'#1f2937',marginBottom:8}}>주문 상품 {orders.length}개</h3>
+                    <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                      {orders.map(order=>(
+                        <div key={order.id} style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                          <ProductImg size="md" badge={order.badge}/>
+                          <div style={{flexGrow:1,minWidth:0}}>
+                            <p style={{fontSize:'10px',fontWeight:'bold',color:'#1f2937'}} className="truncate">{order.productName}</p>
+                            <p style={{fontSize:'9px',color:'#9ca3af'}}>수량 {order.quantity}개</p>
+                          </div>
+                          <span style={{fontSize:'11px',fontWeight:900,color:'#111',flexShrink:0}}>{order.totalPrice.toLocaleString()}원</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{height:8,background:'#f3f4f6'}}/>
+                  <div style={{padding:'12px 16px'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                      <h3 style={{fontSize:'11px',fontWeight:900,color:'#1f2937'}}>배송지</h3>
+                      <button style={{fontSize:'9px',color:'#ec4899',fontWeight:'bold',background:'none',border:'none',cursor:'pointer'}}>변경</button>
+                    </div>
+                    <div style={{background:'#f9fafb',borderRadius:'12px',padding:'12px'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:4}}>
+                        <span style={{fontSize:'10px',fontWeight:'bold',color:'#1f2937'}}>홍길동</span>
+                        <span style={{fontSize:'9px',color:'#9ca3af'}}>010-1234-5678</span>
+                        <span style={{fontSize:'8px',background:'#fce7f3',color:'#ec4899',fontWeight:'bold',padding:'2px 6px',borderRadius:'4px'}}>기본배송지</span>
+                      </div>
+                      <p style={{fontSize:'9px',color:'#6b7280'}}>서울특별시 강남구 테헤란로 123 456호</p>
+                    </div>
+                  </div>
+                  <div style={{height:8,background:'#f3f4f6'}}/>
+                  <div style={{padding:'12px 16px'}}>
+                    <h3 style={{fontSize:'11px',fontWeight:900,color:'#1f2937',marginBottom:8}}>배송 방법</h3>
+                    <div style={{background:'#f9fafb',borderRadius:'12px',padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <span style={{fontSize:'10px',color:'#374151'}}>일반배송</span>
+                      <span style={{fontSize:'10px',fontWeight:'bold',color:'#111'}}>{shippingFee.toLocaleString()}원</span>
+                    </div>
+                  </div>
+                  <div style={{height:8,background:'#f3f4f6'}}/>
+                  <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:'10px'}}>
+                    <h3 style={{fontSize:'11px',fontWeight:900,color:'#1f2937'}}>할인 혜택</h3>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                      <span style={{fontSize:'10px',color:'#4b5563'}}>쿠폰</span>
+                      <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                        <span style={{fontSize:'10px',fontWeight:'bold',color:'#3b82f6'}}>-{couponDiscount.toLocaleString()}원</span>
+                        <span style={{fontSize:'9px',background:'#f3f4f6',color:'#6b7280',padding:'2px 6px',borderRadius:'4px'}}>1장 적용</span>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                      <span style={{fontSize:'10px',color:'#4b5563'}}>포인트</span>
+                      <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                        <span style={{fontSize:'9px',color:'#9ca3af'}}>보유 1,200P</span>
+                        <input readOnly value="0" style={{width:64,textAlign:'right',border:'1px solid #e5e7eb',borderRadius:'4px',padding:'2px 6px',fontSize:'10px',background:'white'}}/>
+                        <span style={{fontSize:'9px',color:'#9ca3af'}}>P</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{height:8,background:'#f3f4f6'}}/>
+                  <div style={{padding:'12px 16px'}}>
+                    <h3 style={{fontSize:'11px',fontWeight:900,color:'#1f2937',marginBottom:8}}>결제 수단</h3>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'6px'}}>
+                      {["신용카드","카카오페이","네이버페이","토스페이","무통장","휴대폰"].map((method,i)=>(
+                        <button key={method} style={{padding:'8px',borderRadius:'8px',border:i===0?'1px solid #ec4899':'1px solid #e5e7eb',fontSize:'9px',fontWeight:'bold',color:i===0?'#db2777':'#6b7280',background:i===0?'#fdf2f8':'white',cursor:'pointer'}}>{method}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{height:8,background:'#f3f4f6'}}/>
+                  <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:'6px'}}>
+                    <h3 style={{fontSize:'11px',fontWeight:900,color:'#1f2937',marginBottom:8}}>최종 결제금액</h3>
+                    {[['총 상품금액',`${orderSubtotal.toLocaleString()}원`],['쿠폰 할인',`-${couponDiscount.toLocaleString()}원`],['포인트 할인','-0원'],['배송비',`${shippingFee.toLocaleString()}원`]].map(([k,v])=>(
+                      <div key={k} style={{display:'flex',justifyContent:'space-between',fontSize:'10px'}}>
+                        <span style={{color:'#6b7280'}}>{k}</span>
+                        <span style={{fontWeight:'bold',color:k.includes('할인')?'#3b82f6':'#111'}}>{v}</span>
+                      </div>
+                    ))}
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:'10px',paddingTop:8,borderTop:'1px solid #e5e7eb',marginTop:4}}>
+                      <span style={{fontWeight:900,color:'#111'}}>최종 결제금액</span>
+                      <span style={{fontWeight:900,color:'#ef4444',fontSize:'13px'}}>{orderTotal.toLocaleString()}원</span>
+                    </div>
+                  </div>
+                  <div style={{height:16}}/>
+                </div>
+                <div style={{flexShrink:0,borderTop:'1px solid #e5e7eb',background:'white',padding:'12px 16px'}}>
+                  <button onClick={()=>{setShowCheckoutPage(false);setShowPayComplete(true);}} style={{width:'100%',padding:'12px',borderRadius:'12px',background:'#ec4899',color:'white',fontWeight:900,fontSize:'12px',border:'none',cursor:'pointer'}}>
+                    {orderTotal.toLocaleString()}원 결제하기
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showPayComplete && (
+              <div style={{position:'absolute',bottom:0,left:0,width:'100%',zIndex:60}}>
+                <PayCompleteModal orders={orders} onClose={()=>{setShowPayComplete(false);setOrders([]);}}/>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 셀러뷰 */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+          <div style={{marginBottom:'8px',display:'inline-flex',alignItems:'center',gap:'6px',background:'#ffedd5',color:'#c2410c',padding:'4px 12px',borderRadius:'999px',fontSize:'12px',fontWeight:'bold'}}>
+            <Icon name="Store" size={12}/> 셀러뷰
+          </div>
+          <div style={mobileStyle}>
+            <div style={{position:'absolute',top:0,width:'100%',height:'32px',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 20px',zIndex:20,color:'white',fontSize:'10px'}}>
+              <span>8:06</span><div style={{opacity:0.5}}>|||</div>
+            </div>
+            <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,#1e293b,#111827,#000)'}}>
+              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'60px',opacity:0.2}}>🎪</div>
+            </div>
+            <div style={{position:'absolute',top:'36px',left:0,width:'100%',padding:'0 12px',zIndex:10,display:'flex',justifyContent:'space-between',alignItems:'flex-start',color:'white'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#f472b6,#ef4444)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px'}}>👩</div>
+                <div><div style={{fontWeight:'bold',fontSize:'11px'}}>꽃꽃언니 🎀</div><div style={{fontSize:'9px',opacity:0.8}}>❤️ 5만  🔥 723</div></div>
+              </div>
+              <div style={{display:'flex',gap:'8px',color:'white'}}><Icon name="MoreVertical" size={14}/><Icon name="Maximize2" size={14}/></div>
+            </div>
+
+            {!isSellerManagementOpen && activeProduct && (
+              <div style={{position:'absolute',bottom:'80px',left:0,width:'100%',padding:'0 12px',zIndex:10}}>
+                <div onClick={()=>setIsSellerManagementOpen(true)} style={{position:'relative',background:'white',borderRadius:'8px',display:'flex',alignItems:'stretch',boxShadow:'0 10px 25px rgba(0,0,0,0.2)',overflow:'hidden',cursor:'pointer'}}>
+                  <div style={{position:'absolute',top:0,left:0,background:'#2563eb',color:'white',fontWeight:'bold',borderRadius:'0 0 4px 0',zIndex:10,fontSize:'5px',lineHeight:1,padding:'1px 2px',whiteSpace:'nowrap'}}>한정상품</div>
+                  <div style={{width:56,background:'#e0f2fe',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="Store" size={20} className="text-blue-400"/></div>
+                  <div style={{flexGrow:1,padding:'8px',display:'flex',flexDirection:'column',justifyContent:'center',minWidth:0}}>
+                    <h3 style={{fontSize:'10px',fontWeight:'bold',color:'#111'}} className="truncate">{activeProduct.name}</h3>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginTop:2}}>
+                      <span style={{fontWeight:900,fontSize:'11px'}}>{activeProduct.price.toLocaleString()}원</span>
+                      <div style={{textAlign:'right'}}>
+                        <div style={{fontSize:'8px',fontWeight:'bold',color:'#ef4444'}}>판매가능 {currentStock+120}</div>
+                        <div style={{fontSize:'8px',fontWeight:'bold',color:'#9ca3af'}}>재고 {currentStock}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!isSellerManagementOpen && (
+              <div style={{position:'absolute',bottom:0,width:'100%',padding:'8px 8px 16px',zIndex:10,display:'flex',alignItems:'flex-end',gap:'6px',color:'white',background:'linear-gradient(to top,rgba(0,0,0,0.7),transparent)'}}>
+                <div onClick={()=>setIsSellerManagementOpen(true)} style={{position:'relative',width:36,height:36,background:'rgba(255,255,255,0.2)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid rgba(255,255,255,0.3)',cursor:'pointer'}}>
+                  <Icon name="ShoppingBag" size={16}/>
+                  <span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',fontSize:'8px',width:14,height:14,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold'}}>1</span>
+                </div>
+                <div style={{flexGrow:1,background:'rgba(0,0,0,0.4)',color:'rgba(255,255,255,0.7)',fontSize:'10px',borderRadius:999,padding:'8px 12px',border:'1px solid rgba(255,255,255,0.2)'}}>메시지 입력</div>
+                <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                  {[['Gift','선물'],['Ticket','쿠폰'],['Heart','좋아요']].map(([n,l])=>(
+                    <div key={n} style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                      <Icon name={n} size={16}/><span style={{fontSize:'8px'}}>{l}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Seller management sheet */}
+            <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:40,background:'white',borderRadius:'16px 16px 0 0',display:'flex',flexDirection:'column',height:'75%',transform:isSellerManagementOpen?'translateY(0)':'translateY(100%)',transition:'transform 0.3s'}}>
+              <div style={{padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:'1px solid #e5e7eb',flexShrink:0}}>
+                <Icon name="RotateCw" size={14} style={{color:'#9ca3af',cursor:'pointer'}}/>
+                <h2 style={{fontWeight:'bold',fontSize:'12px'}}>한정판매 라이브</h2>
+                <button onClick={()=>setIsSellerManagementOpen(false)} style={{color:'#374151',background:'none',border:'none',cursor:'pointer'}}><Icon name="X" size={16}/></button>
+              </div>
+              <div style={{padding:'8px 12px',textAlign:'center',background:'#f9fafb',flexShrink:0}}>
+                <p style={{fontSize:'9px',color:'#6b7280'}}>판매할 상품을 선택해주세요.</p>
+              </div>
+              <div style={{flexGrow:1,overflowY:'auto',padding:'12px',display:'flex',flexDirection:'column',gap:'16px'}}>
+                {products.map(prod=>(
+                  <div key={prod.id} style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                    <div style={{display:'flex',alignItems:'flex-start',gap:'8px'}}>
+                      <div style={{width:48,height:48,borderRadius:'8px',background:'#e0f2fe',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',flexShrink:0}}>
+                        <div style={{position:'absolute',top:0,left:0,background:'#6366f1',color:'white',fontWeight:'bold',borderRadius:'0 0 4px 0',fontSize:'5px',lineHeight:1,padding:'1px 2px',whiteSpace:'nowrap'}}>한정</div>
+                        <Icon name="Store" size={16} className="text-blue-400"/>
+                      </div>
+                      <div style={{flexGrow:1,minWidth:0}}>
+                        <h4 style={{fontWeight:'bold',fontSize:'10px'}} className="truncate">{prod.name}</h4>
+                        <span style={{fontWeight:900,fontSize:'11px'}}>{prod.price.toLocaleString()}원</span>
+                      </div>
+                      <div style={{display:'flex',flexDirection:'column',gap:'4px',flexShrink:0}}>
+                        <button onClick={()=>handleUp(prod.id)} style={{width:44,padding:'4px 0',borderRadius:'4px',fontSize:'8px',fontWeight:'bold',border:'none',cursor:'pointer',background:activeProductId===prod.id?'#ef4444':'#e5e7eb',color:activeProductId===prod.id?'white':'#6b7280'}}>UP</button>
+                        <button onClick={()=>toggleStoreOn(prod.id)} style={{width:44,padding:'4px 0',borderRadius:'4px',fontSize:'8px',fontWeight:'bold',border:'none',cursor:'pointer',background:storeOnProducts[prod.id]?'#22c55e':'#e5e7eb',color:storeOnProducts[prod.id]?'white':'#6b7280'}}>
+                          {storeOnProducts[prod.id]?"스토어ON":"스토어"}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                      <div style={{display:'flex',border:'1px solid #e5e7eb',borderRadius:'4px',overflow:'hidden',fontSize:'8px'}}>
+                        {["판매예정","판매중","품절"].map(s=>(
+                          <button key={s} onClick={()=>updateStatus(prod.id,s)} style={{padding:'4px 6px',borderRight:'1px solid #e5e7eb',fontWeight:'bold',border:'none',cursor:'pointer',color:productStatuses[prod.id]===s?'#ef4444':'#9ca3af',background:productStatuses[prod.id]===s?'#fef2f2':'white'}}>{s}</button>
+                        ))}
+                      </div>
+                      <div style={{flexGrow:1,display:'flex',justifyContent:'space-between',background:'#f9fafb',borderRadius:'4px',padding:'4px 6px',fontSize:'8px'}}>
+                        {[['판매','50'],['결제','45'],['적립','5']].map(([k,v])=>(
+                          <div key={k} style={{textAlign:'center'}}><div style={{color:'#9ca3af'}}>{k}</div><div style={{fontWeight:900}}>{v}</div></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BusinessCenter = () => {
+  const [selectedProducts, setSelectedProducts] = useState([0]);
+  const [currentPage, setCurrentPage] = useState(4);
+  const bizProducts = [
+    {id:0,name:"일반상품 1",code:"9774ozm",saleStatus:"판매가능",livePrice:15000,stock:100,period:"2025.11.01 16:00 ~ 2025.11.01 23:59"},
+    {id:1,name:"일반상품 2",code:"9774ozm",saleStatus:"판매가능",livePrice:22000,stock:20,period:"2025.11.01 16:00 ~ 2025.11.01 23:59"},
+    {id:2,name:"일반상품 3",code:"9774ozm",saleStatus:"판매대기",livePrice:23000,stock:15,period:"2025.11.01 16:00 ~ 2025.11.01 23:59"},
+    {id:3,name:"일반상품 4",code:"9774ozm",saleStatus:"판매대기",livePrice:25000,stock:10,period:"2025.11.01 16:00 ~ 2025.11.01 23:59"},
+    {id:4,name:"일반상품 5",code:"9774ozm",saleStatus:"판매가능",livePrice:28000,stock:8,period:"2025.11.01 16:00 ~ 2025.11.01 23:59"},
+  ];
+  const toggleProduct = (id) => setSelectedProducts(prev=>prev.includes(id)?prev.filter(p=>p!==id):[...prev,id]);
+  return (
+    <div style={{background:'#f9fafb',minHeight:'calc(100vh - 60px)',padding:'24px'}}>
+      <div style={{maxWidth:'1152px',margin:'0 auto'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+            <Icon name="ChevronLeft" size={20} style={{color:'#9ca3af',cursor:'pointer'}}/>
+            <h1 style={{fontSize:'20px',fontWeight:'bold'}}>한정판매 라이브 상품 설정</h1>
+            <span style={{color:'#ec4899',fontSize:'14px'}}>진행대기중</span>
+          </div>
+          <button style={{background:'#ec4899',color:'white',padding:'8px 16px',borderRadius:'8px',display:'flex',alignItems:'center',gap:'8px',border:'none',cursor:'pointer',fontWeight:'bold'}}>
+            <Icon name="Plus" size={16}/> 상품추가
+          </button>
+        </div>
+        <div style={{background:'#fdf2f8',border:'1px solid #fbcfe8',borderRadius:'8px',padding:'16px',marginBottom:'24px',fontSize:'14px',color:'#be185d'}}>
+          <p>• 상품을 추가하시고, 상품 옆의 '등록 추가' 버튼을 눌러주세요.</p>
+          <p>• 한정판매 외의 스토어에도 상품을 등록하시려면 스토어 등록 기능을 이용해 주세요.</p>
+        </div>
+        <div style={{background:'white',borderRadius:'8px',border:'1px solid #e5e7eb',padding:'16px',marginBottom:'16px'}}>
+          <h3 style={{fontWeight:500,marginBottom:'12px',fontSize:'14px'}}>판매시 상품 간편 등록</h3>
+          <div style={{display:'flex',alignItems:'center',gap:'16px',flexWrap:'wrap'}}>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <span style={{fontSize:'14px',color:'#6b7280'}}>상품정보</span>
+              <input type="text" placeholder="상품명을 입력하세요" style={{border:'1px solid #e5e7eb',borderRadius:'6px',padding:'8px 12px',fontSize:'14px',width:192}}/>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <span style={{fontSize:'14px',color:'#6b7280'}}>라이브가</span>
+              <input type="text" defaultValue="10,000" style={{border:'1px solid #e5e7eb',borderRadius:'6px',padding:'8px 12px',fontSize:'14px',width:96}}/>
+              <span style={{fontSize:'14px'}}>원</span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <span style={{fontSize:'14px',color:'#6b7280'}}>상품 수량</span>
+              <input type="text" defaultValue="150" style={{border:'1px solid #e5e7eb',borderRadius:'6px',padding:'8px 12px',fontSize:'14px',width:80}}/>
+              <span style={{fontSize:'14px'}}>개</span>
+            </div>
+            <button style={{background:'#1f2937',color:'white',padding:'8px 16px',borderRadius:'6px',fontSize:'14px',border:'none',cursor:'pointer'}}>상품등록</button>
+          </div>
+        </div>
+        <div style={{background:'white',borderRadius:'8px',border:'1px solid #e5e7eb'}}>
+          <div style={{padding:'16px',borderBottom:'1px solid #e5e7eb',display:'flex',alignItems:'center',gap:'16px'}}>
+            <span style={{fontSize:'14px',color:'#6b7280'}}>상세조건</span>
+            <select style={{border:'1px solid #e5e7eb',borderRadius:'6px',padding:'8px 12px',fontSize:'14px'}}><option>높낮임</option></select>
+            <div style={{display:'flex',alignItems:'center',border:'1px solid #e5e7eb',borderRadius:'6px'}}>
+              <Icon name="Search" size={16} style={{color:'#9ca3af',margin:'0 8px'}}/>
+              <input type="text" placeholder="검색어를 입력해 주세요" style={{padding:'8px 12px',fontSize:'14px',border:'none',outline:'none',width:192}}/>
+            </div>
+            <button style={{background:'#1f2937',color:'white',padding:'8px 16px',borderRadius:'6px',fontSize:'14px',border:'none',cursor:'pointer'}}>검색</button>
+          </div>
+          <div style={{padding:'16px',borderBottom:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'space-between',background:'#f9fafb'}}>
+            <span style={{fontSize:'14px'}}>선택 <span style={{color:'#ec4899',fontWeight:500}}>{selectedProducts.length}</span></span>
+            <div style={{display:'flex',gap:'8px'}}>
+              {["저장","스토어 일괄 등록","상품 목록 다운로드"].map(t=>(
+                <button key={t} style={{border:'1px solid #e5e7eb',background:'white',padding:'8px 16px',borderRadius:'6px',fontSize:'14px',cursor:'pointer'}}>{t}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',fontSize:'14px',borderCollapse:'collapse'}}>
+              <thead style={{background:'#f9fafb',borderBottom:'1px solid #e5e7eb'}}>
+                <tr>
+                  <th style={{padding:'12px',textAlign:'left',width:40}}><input type="checkbox" style={{accentColor:'#ec4899'}}/></th>
+                  {["이미지","상품명","상품코드","판매상태","스토어","라이브가","재고","판매기간"].map(h=>(
+                    <th key={h} style={{padding:'12px',textAlign:'left'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bizProducts.map(product=>(
+                  <tr key={product.id} style={{borderBottom:'1px solid #e5e7eb',background:selectedProducts.includes(product.id)?'#fdf2f8':'white'}}>
+                    <td style={{padding:'12px'}}><input type="checkbox" checked={selectedProducts.includes(product.id)} onChange={()=>toggleProduct(product.id)} style={{accentColor:'#ec4899'}}/></td>
+                    <td style={{padding:'12px'}}><div style={{width:48,height:48,background:'#e0f2fe',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="Store" size={18} className="text-blue-400"/></div></td>
+                    <td style={{padding:'12px',maxWidth:192}}><div className="truncate">{product.name}</div></td>
+                    <td style={{padding:'12px',color:'#6b7280'}}>{product.code}</td>
+                    <td style={{padding:'12px'}}><span style={{fontSize:'12px',padding:'4px 8px',borderRadius:'4px',background:product.saleStatus==="판매가능"?'#fce7f3':'#f3f4f6',color:product.saleStatus==="판매가능"?'#ec4899':'#6b7280'}}>{product.saleStatus}</span></td>
+                    <td style={{padding:'12px'}}>
+                      <div style={{display:'flex',gap:'4px'}}>
+                        <button style={{fontSize:'12px',border:'none',borderRadius:'4px',padding:'4px 8px',background:'#1f2937',color:'white',cursor:'pointer'}}>스토어</button>
+                        <button style={{fontSize:'12px',border:'1px solid #e5e7eb',borderRadius:'4px',padding:'4px 8px',background:'white',cursor:'pointer'}}>관리</button>
+                      </div>
+                    </td>
+                    <td style={{padding:'12px',fontWeight:500}}>{product.livePrice.toLocaleString()}</td>
+                    <td style={{padding:'12px'}}>{product.stock}</td>
+                    <td style={{padding:'12px',fontSize:'12px',color:'#6b7280',whiteSpace:'nowrap'}}>{product.period}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{padding:'16px',display:'flex',justifyContent:'center',alignItems:'center',gap:'4px'}}>
+            <button style={{padding:'8px',background:'none',border:'none',cursor:'pointer'}}><Icon name="ChevronLeft" size={16}/></button>
+            {[1,2,3,4,5,6,7,8,9,10].map(page=>(
+              <button key={page} onClick={()=>setCurrentPage(page)} style={{width:32,height:32,borderRadius:'6px',fontSize:'14px',border:'none',cursor:'pointer',background:page===currentPage?'#1f2937':'transparent',color:page===currentPage?'white':'#374151'}}>{page}</button>
+            ))}
+            <button style={{padding:'8px',background:'none',border:'none',cursor:'pointer'}}><Icon name="ChevronRight" size={16}/></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function App() {
+  const [activeTab, setActiveTab] = useState("simulation");
+  return (
+    <div style={{minHeight:'100vh',background:'#f9fafb'}}>
+      <header style={{background:'white',borderBottom:'1px solid #e5e7eb',position:'sticky',top:0,zIndex:50}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'24px'}}>
+            <h1 style={{fontSize:'20px',fontWeight:'bold',color:'#ec4899',margin:0}}>한정판매 라이브</h1>
+            <nav style={{display:'flex',gap:'4px'}}>
+              {[["simulation","방송 시뮬레이션 화면"],["business","비즈니스센터"]].map(([tab,label])=>(
+                <button key={tab} onClick={()=>setActiveTab(tab)} style={{padding:'8px 16px',borderRadius:'8px',fontWeight:500,border:'none',cursor:'pointer',background:activeTab===tab?'#ec4899':'transparent',color:activeTab===tab?'white':'#374151'}}>{label}</button>
+              ))}
+            </nav>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:'16px'}}>
+            <Icon name="Search" size={20} style={{color:'#9ca3af'}}/>
+            <Icon name="Bell" size={20} style={{color:'#9ca3af'}}/>
+            <div style={{width:32,height:32,background:'#e5e7eb',borderRadius:'50%'}}/>
+          </div>
+        </div>
+      </header>
+      {activeTab==="simulation" ? <BroadcastSimulation/> : <BusinessCenter/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
